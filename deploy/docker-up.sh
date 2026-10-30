@@ -38,7 +38,9 @@ if [ ! -f config.php ] || [ $CHANGE_PIN = 1 ]; then
 fi
 
 mkdir -p data && chown -R 33:33 data && chmod 750 data
-docker compose -f deploy/docker-compose.yml --env-file .env -p founders-walk up -d
+# Recreate the container each time: the files are mounted one by one, and an update
+# replaces them, so a running container would keep serving the old copies.
+docker compose -f deploy/docker-compose.yml --env-file .env -p founders-walk up -d --force-recreate
 
 echo
 echo "Done. In a minute or two (while HTTPS is set up) open:"
