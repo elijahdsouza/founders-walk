@@ -19,6 +19,17 @@ database file and PHP's built-in mail. No paid services.
 | `qrcode.min.js` | QR code library (MIT, see `qrcode.LICENSE.txt`) |
 | `.htaccess`, `data/.htaccess` | Block the settings and the database from the web |
 
+## Quick install on a Hostinger VPS
+
+In hPanel, open your VPS and click **Browser terminal**, then paste:
+
+```sh
+cd /root && curl -fsSL https://github.com/elijahdsouza/founders-walk/archive/refs/heads/main.tar.gz | tar xz && cd founders-walk-main && bash deploy/setup-vps.sh
+```
+
+Answer its questions (web address, host PIN, email yes/no). If another site already
+uses the server's web ports, it stops without changing anything and shows what's there.
+
 ## Set up on a Hostinger VPS (about 20 minutes, once)
 
 The host screen (`?host`) and the attendee screens are the same site and share one
