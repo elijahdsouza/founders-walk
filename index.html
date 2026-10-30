@@ -171,6 +171,7 @@ form { display: grid; gap: 14px; }
 .armed { position: relative; overflow: hidden; background: var(--accent) !important; color: #1a1a1a !important; border-color: var(--accent) !important; }
 .armed::after { content: ""; position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; background: #16140f; transform-origin: left; animation: confirmrun var(--confirm-ms, 8000ms) linear forwards; }
 @keyframes confirmrun { to { transform: scaleX(0); } }
+.odd-note { margin: 0; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--accent); color: var(--fg2); }
 .lobby { display: flex; flex-wrap: wrap; gap: 8px; }
 .lchip { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border-radius: 999px; border: 1px solid var(--rule); background: var(--surface); font-size: 13.5px; animation: pop .3s ease-out; }
 .lchip.me { border-color: var(--accent); }
@@ -815,7 +816,10 @@ function viewMatch(view, r) {
     return;
   }
   const cards = ensureCards(r);
-  const lead = r === 1 ? 'Walk with ' + names(m.people) : 'Next up: ' + names(m.people);
+  // An odd number of people means one group of three: say so, so nobody goes looking for a pair.
+  const three = m.people.length >= 2;
+  const lead = three ? 'You\'re a three with ' + names(m.people)
+    : r === 1 ? 'Walk with ' + names(m.people) : 'Next up: ' + names(m.people);
 
   const track = h('div', { class: 'cards', id: 'cards-' + r, tabindex: '0', 'aria-label': 'Question cards, swipe for more' });
   const dots = h('div', { class: 'dots', 'aria-hidden': 'true' }, cards.map((_, k) => h('i', { class: k === (S.cardIdx[r] || 0) ? 'on' : '' })));
@@ -841,7 +845,8 @@ function viewMatch(view, r) {
 
   view.append(
     h('div', { class: 'lead' }, h('span', { class: 'eyebrow', text: 'Match ' + r + ' of ' + total + (state === 'met' ? ' · Met' : state === 'skipped' ? ' · Skipped' : '') }),
-      h('h2', { text: lead })),
+      h('h2', { text: lead }),
+      three ? h('p', { text: 'Walk together, all three of you. Take turns answering each card so everyone gets a go.' }) : null),
     h('div', { class: 'match' }, m.people.map(personRow)),
     h('div', { class: 'qhead' }, h('span', { class: 'eyebrow', text: 'Talk about' }), shuffleAll),
     track, dots);
@@ -1163,6 +1168,7 @@ function renderHostWalk() {
     } }, 'Copy sign-up link');
 
   const actions = h('div', { class: 'btnrow' });
+  let oddNote = null;
   const act = async (a, msg) => {
     try { const r = await api(a, { host: true, body: { code: walk.code } }); H.sig = ''; await hostWalk(walk.code);
       toast(a === 'end' ? (DEMO ? 'Walk ended. The preview sends no email.' : `Walk ended. ${r.sent} summaries sent${r.rollup ? ', roll-up sent to you' : ''}.`) : msg);
@@ -1171,6 +1177,7 @@ function renderHostWalk() {
   if (walk.status === 'open') {
     const missing = people.length - hereCount;
     const startBtn = h('button', { class: 'btn btn-primary', type: 'button', disabled: hereCount < 2, text: `Start matching (${hereCount} here)` });
+    if (hereCount >= 3 && hereCount % 2) oddNote = h('p', { class: 'small odd-note', text: `Odd number here (${hereCount}): everyone's in pairs except one group of three, who walk together. Want pairs only? Scan the QR code yourself to make it even.` });
     actions.append(hereCount < 2 ? startBtn : confirmButton(startBtn,
       missing ? `Tap again to match ${hereCount} (${missing} not here)` : `Tap again to match all ${hereCount}`,
       () => act('start', 'Matched. Everyone checked in can see their match.')));
@@ -1219,7 +1226,7 @@ function renderHostWalk() {
       h('section', { class: 'panel' },
         h('div', { class: 'qhead' }, h('h3', { text: hereCount + ' here' }),
           h('span', { class: 'small', text: (people.length - hereCount) + ' signed up, not here' + (walk.status !== 'open' ? ' · ' + doneCount + ' finished' : '') })),
-        actions, plist, redo.childElementCount ? redo : null),
+        oddNote, actions, plist, redo.childElementCount ? redo : null),
       groupsEl)));
 }
 
