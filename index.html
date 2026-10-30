@@ -1,0 +1,1150 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Founders Walk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Get matched with two founders you haven't met yet on Uncommon Collective's Founders Walk.">
+<meta name="theme-color" content="#f3efe6">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%2216%22 fill=%22%2316251e%22/%3E%3Ctext x=%2216%22 y=%2222%22 font-family=%22Georgia%22 font-size=%2217%22 text-anchor=%22middle%22 fill=%22%23bbab69%22%3EW%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=Poppins:wght@400;500;600&display=swap">
+<style>
+/* Layout: one phone-width column (wider for the host), header + progress on top,
+   one card-led step in the middle, a sticky action bar at the bottom. UC Pro Group tokens. */
+:root {
+  --bg: #f3efe6;          /* bone */
+  --surface: #fafaf7;     /* off-white card */
+  --fg: #16140f;          /* ink */
+  --fg2: #57534a;
+  --fg3: #8a8478;
+  --rule: #e2ddd2;
+  --accent: #bbab69;      /* gold */
+  --accent-ink: #6f6127;
+  --deep: #16251e;        /* green */
+  --deep-fg: #f3efe6;
+  --deep-fg2: #a9b4ac;
+  --danger: #b0413e;
+  --c-ice-bg: #ece3c4; --c-ice-fg: #5e5220;
+  --c-journey-bg: #dbe5de; --c-journey-fg: #16251e;
+  --c-net-bg: #e0e3f4; --c-net-fg: #2c3683;
+  --display: "Playfair Display", Georgia, "Times New Roman", serif;
+  --text: "Poppins", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --gutter: 16px;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e0d0b; --surface: #1c1b18; --fg: #f3efe6; --fg2: #b0a99b; --fg3: #8a8478;
+    --rule: #2e2a23; --accent: #bbab69; --accent-ink: #d9cb8e; --deep: #16251e; --deep-fg: #f3efe6; --deep-fg2: #a9b4ac;
+    --danger: #e0807c;
+    --c-ice-bg: #3a3320; --c-ice-fg: #e6d99f;
+    --c-journey-bg: #1d3128; --c-journey-fg: #bcd5c5;
+    --c-net-bg: #23294f; --c-net-fg: #c6ccf3;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e0d0b; --surface: #1c1b18; --fg: #f3efe6; --fg2: #b0a99b; --fg3: #8a8478;
+  --rule: #2e2a23; --accent: #bbab69; --accent-ink: #d9cb8e; --deep: #16251e; --deep-fg: #f3efe6; --deep-fg2: #a9b4ac;
+  --danger: #e0807c;
+  --c-ice-bg: #3a3320; --c-ice-fg: #e6d99f;
+  --c-journey-bg: #1d3128; --c-journey-fg: #bcd5c5;
+  --c-net-bg: #23294f; --c-net-fg: #c6ccf3;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 400 15px/1.5 var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+button, input { font: inherit; color: inherit; }
+a { color: inherit; }
+[hidden] { display: none !important; }
+
+.app {
+  min-height: 100%; max-width: 480px; margin: 0 auto;
+  display: flex; flex-direction: column;
+  padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+}
+.app.wide { max-width: 1040px; }
+
+/* ----- header ----- */
+.top { padding-block: 14px 4px; display: grid; gap: 2px; }
+.brand { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.eyebrow {
+  font: 500 11px/1.4 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--fg3);
+}
+.top h1 {
+  margin: 0; font: 500 clamp(28px, 7.5vw, 34px)/1.05 var(--display); letter-spacing: -.01em;
+}
+.top h1 em { font-style: italic; color: var(--accent-ink); }
+.demo-note {
+  margin: 10px 0 0; padding: 8px 12px; border-radius: 10px; border: 1px dashed var(--accent);
+  font-size: 12.5px; color: var(--fg2);
+}
+
+/* ----- progress ----- */
+.steps { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; margin-top: 12px; }
+.step {
+  appearance: none; border: 0; background: none; padding: 0; text-align: left; cursor: pointer;
+  display: grid; gap: 6px; color: var(--fg3);
+}
+.step:disabled { cursor: default; }
+.step .bar { height: 5px; border-radius: 99px; background: var(--rule); position: relative; overflow: hidden; }
+.step.done .bar { background: var(--accent); }
+.step.skipped .bar { background: transparent; box-shadow: inset 0 0 0 1.5px var(--accent); }
+.step.current .bar { background: var(--fg); }
+.step.done.current .bar, .step.skipped.current .bar { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--fg); }
+.step .lbl { font: 500 10.5px/1.2 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+.step.current .lbl { color: var(--fg); }
+.step:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
+
+/* ----- main ----- */
+main { flex: 1; display: grid; align-content: start; gap: 14px; padding-block: 18px 14px; }
+.lead h2 { margin: 4px 0 6px; font: 500 25px/1.14 var(--display); text-wrap: balance; letter-spacing: -.01em; }
+.lead p { margin: 0; color: var(--fg2); max-width: 36ch; }
+
+/* ----- form ----- */
+form { display: grid; gap: 14px; }
+.field { display: grid; gap: 6px; }
+.field label, .legend { font-size: 13px; font-weight: 500; }
+.field .hint { font-weight: 400; color: var(--fg3); }
+.input {
+  width: 100%; min-height: 48px; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid var(--rule); background: var(--surface); outline: none;
+}
+.input:focus { border-color: var(--fg); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); }
+.input::placeholder { color: var(--fg3); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.chip-toggle span {
+  display: inline-flex; align-items: center; min-height: 38px; padding: 7px 14px; border-radius: 99px;
+  border: 1px solid var(--rule); background: var(--surface); cursor: pointer; font-size: 14px;
+}
+.chip-toggle input:checked + span { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.chip-toggle input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.consent { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; font-size: 13.5px; color: var(--fg2); }
+.consent input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--fg); }
+.error { color: var(--danger); font-size: 13.5px; margin: 0; }
+
+/* ----- buttons ----- */
+.btn {
+  appearance: none; border: 0; cursor: pointer; min-height: 50px; padding: 12px 22px; border-radius: 99px;
+  font-weight: 500; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  text-decoration: none; transition: transform .12s ease, background-color .2s ease;
+}
+.btn:active { transform: scale(.98); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.btn-primary { background: var(--fg); color: var(--bg); }
+.btn-ghost { background: transparent; color: var(--fg); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--fg) 70%, transparent); }
+.btn-quiet { background: transparent; color: var(--fg2); min-height: 40px; padding: 8px 12px; }
+.btn-sm { min-height: 40px; padding: 8px 16px; font-size: 14px; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+.btn.wide { width: 100%; }
+
+.actionbar {
+  position: sticky; bottom: 0; z-index: 2;
+  display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px;
+  padding-block: 12px max(14px, env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, var(--bg) 78%, color-mix(in srgb, var(--bg) 0%, transparent));
+}
+.actionbar.single { grid-template-columns: 1fr; }
+
+/* ----- waiting ----- */
+.count {
+  display: grid; justify-items: start; gap: 2px; padding: 22px; border-radius: var(--radius);
+  background: var(--deep); color: var(--deep-fg);
+}
+.count .num { font: 500 64px/1 var(--display); font-variant-numeric: tabular-nums; }
+.count .cap { color: var(--deep-fg2); }
+.pulse { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--fg2); }
+.pulse::before {
+  content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse { 50% { opacity: .25; transform: scale(.7); } }
+.lobby { display: flex; flex-wrap: wrap; gap: 8px; }
+.lchip { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border-radius: 999px; border: 1px solid var(--rule); background: var(--surface); font-size: 13.5px; animation: pop .3s ease-out; }
+.lchip.me { border-color: var(--accent); }
+.lav { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #16140f; font: 600 11px/1 var(--display); }
+@keyframes pop { from { opacity: 0; transform: scale(.9); } }
+@media (prefers-reduced-motion: reduce) { .lchip { animation: none; } }
+
+/* ----- people ----- */
+.match { display: grid; gap: 8px; padding: 14px 16px; border-radius: var(--radius); background: var(--deep); color: var(--deep-fg); }
+.person { display: grid; grid-template-columns: 40px 1fr auto; gap: 12px; align-items: center; }
+.person + .person { padding-top: 8px; border-top: 1px solid color-mix(in srgb, var(--deep-fg) 14%, transparent); }
+.avatar {
+  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--accent); color: #16140f; font: 600 16px/1 var(--display);
+}
+.person .name { font: 500 19px/1.2 var(--display); }
+.person .meta { font-size: 13px; line-height: 1.4; color: var(--deep-fg2); min-width: 0; overflow-wrap: anywhere; }
+.person .link {
+  align-self: start; margin-top: 2px; font-size: 12.5px; color: var(--deep-fg); white-space: nowrap;
+  text-decoration: none; padding: 5px 10px; border-radius: 99px; box-shadow: inset 0 0 0 1px var(--accent);
+}
+.person .link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.person.self { background: var(--surface); color: var(--fg); border: 1px solid var(--rule); border-radius: var(--radius); padding: 14px; grid-template-columns: 40px 1fr; }
+.person.self .meta { color: var(--fg2); }
+
+/* ----- question cards ----- */
+.qhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.qhead .eyebrow { color: var(--fg2); }
+.cards {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 84%; gap: 12px;
+  overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
+  margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); scroll-padding-inline: var(--gutter);
+  padding-block: 2px 6px; scrollbar-width: none;
+}
+.cards::-webkit-scrollbar { display: none; }
+.qcard {
+  scroll-snap-align: start; min-height: 168px; padding: 16px; border-radius: var(--radius);
+  background: var(--surface); border: 1px solid var(--rule);
+  display: grid; grid-template-rows: auto 1fr auto; gap: 10px;
+}
+.cat {
+  justify-self: start; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 99px;
+  font: 500 10.5px/1.5 var(--mono); letter-spacing: .12em; text-transform: uppercase;
+}
+.cat-ice { background: var(--c-ice-bg); color: var(--c-ice-fg); }
+.cat-journey { background: var(--c-journey-bg); color: var(--c-journey-fg); }
+.cat-net { background: var(--c-net-bg); color: var(--c-net-fg); }
+.qtext { margin: 0; font: 500 19.5px/1.3 var(--display); text-wrap: pretty; transition: opacity .18s ease; }
+.qtext.swap { opacity: 0; }
+.qfoot { display: flex; justify-content: space-between; align-items: center; color: var(--fg3); font: 500 11px/1 var(--mono); letter-spacing: .1em; }
+.shuffle {
+  appearance: none; border: 1px solid var(--rule); background: transparent; border-radius: 99px; cursor: pointer;
+  min-height: 36px; padding: 6px 12px; font: 500 13px/1 var(--text); color: var(--fg); display: inline-flex; gap: 6px; align-items: center;
+}
+.shuffle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dots { display: flex; justify-content: center; gap: 6px; }
+.dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--rule); transition: background .2s, width .2s; }
+.dots i.on { background: var(--fg); width: 16px; border-radius: 99px; }
+.tip { margin: 0; font-size: 13px; color: var(--fg3); }
+
+/* ----- done ----- */
+.summary { display: grid; gap: 10px; }
+.srow { display: grid; gap: 4px; padding: 14px 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--rule); }
+.srow .top-line { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.srow .who { font: 500 19px/1.2 var(--display); }
+.state { font: 500 10.5px/1.5 var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
+.state-met { background: var(--accent); color: #16140f; }
+.state-skipped { box-shadow: inset 0 0 0 1.5px var(--accent); color: var(--accent-ink); }
+.state-open { box-shadow: inset 0 0 0 1px var(--rule); color: var(--fg3); }
+.srow .meta { font-size: 13.5px; color: var(--fg2); overflow-wrap: anywhere; }
+.srow a { font-size: 13.5px; color: var(--fg); }
+.mailbox { display: grid; gap: 10px; padding: 16px; border-radius: var(--radius); border: 1px dashed var(--rule); }
+.mailbox p { margin: 0; font-size: 14px; color: var(--fg2); }
+.row { display: flex; gap: 8px; }
+.row .input { flex: 1; min-width: 0; }
+
+/* ----- host ----- */
+.host-grid { display: grid; gap: 16px; }
+@media (min-width: 820px) { .host-grid { grid-template-columns: 340px 1fr; align-items: start; } }
+.panel { display: grid; gap: 14px; padding: 18px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--rule); min-width: 0; }
+.panel h3 { margin: 0; font: 500 21px/1.2 var(--display); }
+.qr { justify-self: center; padding: 12px; background: #fff; border-radius: 12px; line-height: 0; }
+.qr img, .qr canvas { width: 220px; height: 220px; }
+.code { text-align: center; font: 500 40px/1 var(--mono); letter-spacing: .2em; }
+.urlbox { font: 400 12.5px/1.4 var(--mono); color: var(--fg2); overflow-wrap: anywhere; text-align: center; }
+.pill { display: inline-flex; padding: 3px 10px; border-radius: 99px; font: 500 10.5px/1.5 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+.pill-open { background: var(--c-ice-bg); color: var(--c-ice-fg); }
+.pill-matched { background: var(--c-journey-bg); color: var(--c-journey-fg); }
+.pill-ended { background: var(--rule); color: var(--fg2); }
+.plist { display: grid; }
+.prow { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; padding-block: 10px; border-top: 1px solid var(--rule); align-items: center; }
+.prow:first-child { border-top: 0; }
+.prow .nm { font-weight: 500; min-width: 0; overflow-wrap: anywhere; }
+.prow .sub { grid-column: 1; font-size: 12.5px; color: var(--fg3); min-width: 0; overflow-wrap: anywhere; }
+.marks { display: flex; gap: 4px; align-items: center; }
+.mk { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font: 500 10px/1 var(--mono); box-shadow: inset 0 0 0 1px var(--rule); color: var(--fg3); }
+.mk.met { background: var(--accent); color: #16140f; box-shadow: none; }
+.mk.skipped { box-shadow: inset 0 0 0 1.5px var(--accent); color: var(--accent-ink); }
+.x { appearance: none; border: 0; background: none; color: var(--fg3); cursor: pointer; padding: 6px; border-radius: 8px; font-size: 13px; }
+.x:hover, .x:focus-visible { color: var(--danger); }
+.groups { display: grid; gap: 10px; }
+.groups ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 14px; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 8px; }
+.wlist { display: grid; gap: 8px; }
+.witem { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--rule); background: var(--surface); text-decoration: none; }
+.witem b { font-weight: 500; }
+.small { font-size: 13px; color: var(--fg3); margin: 0; }
+.toast {
+  position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 99px; font-size: 14px; z-index: 9;
+  max-width: calc(100% - 32px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand">
+      <span class="eyebrow">Uncommon Collective</span>
+      <span class="eyebrow" id="where"></span>
+    </div>
+    <h1>Founders <em>Walk</em></h1>
+    <p class="demo-note" id="demoNote" hidden>Preview with example people. Nothing here is saved or emailed.</p>
+    <nav class="steps" id="steps" aria-label="Your progress"></nav>
+  </header>
+  <main id="view" aria-live="polite"></main>
+  <div class="actionbar" id="bar" hidden></div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(() => {
+'use strict';
+
+// ================= questions =================
+const CATS = {
+  ice: 'Icebreaker',
+  journey: 'Founder journey',
+  net: 'Networking',
+};
+const ORDER = ['ice', 'journey', 'net'];
+const Q = {
+  ice: [
+    "What did you want to be at 10, and how close is what you do now?",
+    "What's the most unusual job you've had?",
+    "If your business were a Carlton café, what would it be famous for?",
+    "What's one tool or habit you'd be lost without right now?",
+    "What's the best advice you've ignored?",
+    "What made your week better, however small?",
+    "What's your go-to order at Brunetti's, or any café?",
+    "What's something you're unexpectedly good at?",
+    "What's the last thing you went down a rabbit hole on?",
+    "Morning person or night owl, and when does your best work happen?",
+  ],
+  journey: [
+    "When did you decide “I'm actually doing this”?",
+    "What did you believe about starting a business that turned out wrong?",
+    "What's the story behind the name?",
+    "Who was your first customer, and how did you find them?",
+    "What's a win from this month you haven't celebrated properly?",
+    "What's the hardest call you've made so far?",
+    "When did you last nearly quit, and what kept you going?",
+    "What part of building feels lonely, and what helps?",
+    "What do people misunderstand about what you do?",
+    "What's working better than you expected?",
+    "What did you stop doing that made a big difference?",
+    "What would you tell yourself on day one?",
+  ],
+  net: [
+    "What's one intro that would make a real difference to you right now?",
+    "What could you help someone here with in 15 minutes?",
+    "Describe your ideal customer so well I'd recognise them.",
+    "What are you after right now: customers, a co-founder, hires, advice or investment?",
+    "What's a book, event or community you'd recommend to a founder like me?",
+    "What's one thing I could do this week to help you?",
+    "Who's someone you think I should meet?",
+    "What's a problem you'd pay someone to solve for you tomorrow?",
+  ],
+};
+
+// Seeded picks: everyone in the same round starts from the same three questions,
+// so both people in a pair see the same cards, and round 2 never repeats round 1.
+function seeded(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return () => {
+    h += 0x6D2B79F5; let t = h;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function defaultCards(code, round) {
+  const used = { ice: new Set(), journey: new Set(), net: new Set() };
+  let picks = [];
+  for (let r = 1; r <= round; r++) {
+    const rng = seeded(code + ':' + r);
+    picks = ORDER.map(cat => {
+      const pool = Q[cat].map((_, i) => i).filter(i => !used[cat].has(i));
+      const i = pool[Math.floor(rng() * pool.length)];
+      used[cat].add(i);
+      return { cat, i };
+    });
+  }
+  return picks;
+}
+function cardData(c) { return { cat: c.cat, i: c.i, label: CATS[c.cat], text: Q[c.cat][c.i] }; }
+
+// ================= plumbing =================
+const params = new URLSearchParams(location.search);
+const DEMO = window.FW_DEMO === true || params.has('demo');
+const IS_HOST = params.has('host') || location.hash === '#host';
+const $ = id => document.getElementById(id);
+
+const store = {
+  get(k) { if (DEMO) return null; try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set(k, v) { if (DEMO) return; try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k) { if (DEMO) return; try { localStorage.removeItem(k); } catch {} },
+};
+const session = {
+  get(k) { try { return sessionStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { sessionStorage.setItem(k, v); } catch {} },
+  del(k) { try { sessionStorage.removeItem(k); } catch {} },
+};
+
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === 'class') el.className = v;
+    else if (k === 'text') el.textContent = v;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat()) {
+    if (kid == null || kid === false) continue;
+    el.append(kid instanceof Node ? kid : document.createTextNode(String(kid)));
+  }
+  return el;
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2600);
+}
+
+let hostPin = session.get('fw:pin') || '';
+async function api(a, { params: p = {}, body = null, host = false } = {}) {
+  if (DEMO) return Demo.call(a, { params: p, body });
+  const qs = new URLSearchParams({ a, ...p });
+  const headers = { 'Content-Type': 'application/json' };
+  if (host) headers['X-Host-Pin'] = hostPin;
+  let res;
+  try {
+    res = await fetch('api.php?' + qs, { method: body ? 'POST' : 'GET', headers, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' });
+  } catch {
+    const err = new Error('No connection. Check your signal and try again.'); err.status = 0; throw err;
+  }
+  if (a === 'csv' && res.ok) return res;
+  let data;
+  try { data = await res.json(); } catch { data = null; }
+  if (!data || !data.ok) {
+    const err = new Error((data && data.error) || 'Something went wrong. Try again in a moment.');
+    err.status = res.status; throw err;
+  }
+  return data;
+}
+
+function initials(name) {
+  return name.split(/\s+/).filter(w => /^\p{L}/u.test(w)).slice(0, 2).map(w => w[0].toUpperCase()).join('') || '?';
+}
+function linkLabel(url) {
+  try {
+    const u = new URL(url);
+    if (/linkedin\.com$/i.test(u.hostname)) return 'LinkedIn';
+    return u.hostname.replace(/^www\./, '');
+  } catch { return 'Link'; }
+}
+function prettyDate(ymd) {
+  const d = new Date(ymd + 'T00:00:00');
+  if (isNaN(d)) return ymd;
+  return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+function names(list) {
+  const n = list.map(p => p.name);
+  return n.length <= 1 ? (n[0] || '') : n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1];
+}
+function confirmButton(btn, label, action) {
+  let armed = false, timer;
+  btn.addEventListener('click', () => {
+    if (!armed) {
+      armed = true; const orig = btn.textContent; btn.textContent = label;
+      timer = setTimeout(() => { armed = false; btn.textContent = orig; }, 4000);
+      return;
+    }
+    clearTimeout(timer); armed = false; action();
+  });
+  return btn;
+}
+
+// ================= demo backend (preview only) =================
+const Demo = (() => {
+  const today = new Date(); const ymd = today.toISOString().slice(0, 10);
+  const walk = { code: 'DEMO', title: 'Founders Walk', place: 'Carlton', date: ymd, status: 'open', rounds: [], nextWalkUrl: 'https://luma.com/uncommoncollective' };
+  const people = [
+    { name: 'Maya (example)', role: 'Founder', oneliner: 'Building a booking app for physio clinics', link: 'https://www.linkedin.com/in/example' },
+    { name: 'Tom (example)', role: 'Operator', oneliner: 'Runs ops at a coffee subscription startup', link: '' },
+    { name: 'Priya (example)', role: 'Founder', oneliner: 'Turning café food waste into fertiliser', link: 'https://example.com' },
+    { name: 'Lachlan (example)', role: 'Investor', oneliner: 'Angel in climate and health', link: 'https://www.linkedin.com/in/example' },
+    { name: 'Sofia (example)', role: 'Creator', oneliner: 'Short videos about small-business money', link: '' },
+    { name: 'Ben (example)', role: 'Founder', oneliner: 'Quoting software for tradies', link: 'https://www.linkedin.com/in/example' },
+  ].map((p, i) => ({ ...p, id: i + 1, token: 'ex' + (i + 1), email: '', progress: { rounds: {}, done: false }, emailed: false, done: false, checkedIn: i < 4 }));
+  let nextId = 50, autoStart = null;
+  const pub = p => ({ id: p.id, name: p.name, role: p.role, oneliner: p.oneliner, link: p.link });
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const groupUp = ids => { const g = []; for (let i = 0; i + 1 < ids.length; i += 2) g.push([ids[i], ids[i + 1]]); if (ids.length % 2) { g.length ? g[g.length - 1].push(ids[ids.length - 1]) : g.push([ids[ids.length - 1]]); } return g; };
+  const keys = gs => { const s = new Set(); gs.forEach(g => g.forEach(a => g.forEach(b => { if (a < b) s.add(a + '-' + b); }))); return s; };
+  function makeRounds(ids) {
+    if (ids.length < 2) return [];
+    const r1 = groupUp(shuffle(ids)); if (ids.length < 4) return [r1];
+    const seen = keys(r1); let best = null, bo = Infinity;
+    for (let t = 0; t < 500 && bo > 0; t++) { const g = groupUp(shuffle(ids)); const o = [...keys(g)].filter(k => seen.has(k)).length; if (o < bo) { best = g; bo = o; } }
+    return [r1, best];
+  }
+  function matchesFor(id) {
+    const out = [];
+    walk.rounds.forEach((gs, i) => gs.forEach(g => { if (g.includes(id)) out.push({ round: i + 1, people: g.filter(x => x !== id).map(x => pub(people.find(p => p.id === x))) }); }));
+    return out;
+  }
+  const here = () => people.filter(p => p.checkedIn);
+  const counts = () => ({ count: here().length, signedUp: people.length });
+  function start() { walk.rounds = makeRounds(here().map(p => p.id)); walk.status = 'matched'; }
+  function checkIn(p) {
+    if (p.checkedIn) return; p.checkedIn = true;
+    if (walk.status === 'matched') walk.rounds.forEach(r => { r.sort((x, y) => x.length - y.length)[0].push(p.id); });
+  }
+  const info = () => ({ code: walk.code, title: walk.title, place: walk.place, date: walk.date, status: walk.status, rounds: walk.rounds.length, nextWalkUrl: walk.nextWalkUrl });
+  const find = t => { const p = people.find(p => p.token === t); if (!p) { const e = new Error('We could not find you on this walk. Join again to get matched.'); e.status = 404; throw e; } return p; };
+  return {
+    async call(a, { params: p, body }) {
+      await new Promise(r => setTimeout(r, 120));
+      const b = body || {};
+      switch (a) {
+        case 'walk': return { ok: true, walk: info(), ...counts() };
+        case 'join': {
+          if (!String(b.name || '').trim()) throw new Error('Add your name so your match can find you.');
+          if (!b.consent) throw new Error('Tick the box so we can share your details with your matches.');
+          const me = { id: nextId++, token: 'me' + nextId, name: b.name.trim().slice(0, 40), role: b.role || '', oneliner: (b.oneliner || '').slice(0, 90), link: b.link ? (/^https?:/i.test(b.link) ? b.link : 'https://' + b.link) : '', email: b.email || '', progress: { rounds: {}, done: false }, emailed: false };
+          people.push(me);
+          if (b.key) checkIn(me);
+          if (walk.status === 'open' && me.checkedIn) { clearTimeout(autoStart); autoStart = setTimeout(start, 6000); }
+          return { ok: true, token: me.token };
+        }
+        case 'checkin': {
+          const me = find(b.token); checkIn(me);
+          if (walk.status === 'open') { clearTimeout(autoStart); autoStart = setTimeout(start, 6000); }
+          return { ok: true };
+        }
+        case 'me': {
+          const me = find(p.token);
+          return { ok: true, walk: info(), ...counts(), me: { ...pub(me), email: me.email, emailed: me.emailed, checkedIn: me.checkedIn }, matches: walk.status === 'open' || !me.checkedIn ? [] : matchesFor(me.id), progress: me.progress,
+            lobby: walk.status !== 'open' || !me.checkedIn ? [] : here().map(x => ({ id: x.id, name: x.name, role: x.role })) };
+        }
+        case 'progress': {
+          const me = find(b.token); me.progress = b.progress; if (b.email) me.email = b.email;
+          me.done = !!b.progress.done;
+          if (me.done && me.email) me.emailed = true;
+          return { ok: true, emailed: me.emailed };
+        }
+        case 'walks': return { ok: true, walks: [{ ...info(), count: people.length, here: here().length }] };
+        case 'create': return { ok: true, code: 'DEMO' };
+        case 'host': return { ok: true, walk: { ...info(), key: 'demo' }, groups: walk.rounds, people: people.map(x => ({ ...pub(x), email: x.email, done: x.done, emailed: x.emailed, progress: x.progress, late: false, checkedIn: x.checkedIn })) };
+        case 'host_checkin': { const x = people.find(x => x.id === Number(b.id)); if (x) checkIn(x); return { ok: true }; }
+        case 'start': case 'reshuffle':
+          if (here().length < 2) throw new Error('Matching needs at least 2 people checked in.');
+          clearTimeout(autoStart); start(); return { ok: true };
+        case 'remove': { const i = people.findIndex(x => x.id === Number(b.id)); if (i >= 0) people.splice(i, 1); walk.rounds = walk.rounds.map(gs => gs.map(g => g.filter(x => x !== Number(b.id))).filter(g => g.length)); return { ok: true }; }
+        case 'end': walk.status = 'ended'; return { ok: true, sent: 0, rollup: false };
+        case 'csv': { const e = new Error('CSV downloads work on the live site.'); throw e; }
+      }
+      throw new Error('Unknown action.');
+    },
+  };
+})();
+
+// ================= attendee =================
+const S = {
+  code: (params.get('w') || params.get('code') || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 8),
+  key: (params.get('k') || '').replace(/[^a-f0-9]/gi, '').slice(0, 32),
+  token: null, walk: null, count: 0, signedUp: 0, me: null, matches: [], sig: '', checkinTried: false,
+  progress: { rounds: {}, done: false }, step: null, cardIdx: {},
+};
+if (DEMO && !S.code) S.code = 'DEMO';
+if (DEMO && !S.key) S.key = 'demo'; // the preview acts as if you scanned the QR code at the walk
+function here() { return !!(S.me && S.me.checkedIn); }
+
+function steps() {
+  const list = [{ key: 'join', label: 'Join' }];
+  const n = S.walk && S.walk.status !== 'open' ? Math.max(1, S.matches.length || S.walk.rounds || 0) : 2;
+  for (let r = 1; r <= Math.min(n, 2); r++) list.push({ key: 'm' + r, label: 'Match ' + r, round: r });
+  list.push({ key: 'done', label: 'Done' });
+  return list;
+}
+function roundState(r) { return (S.progress.rounds[r] && S.progress.rounds[r].state) || ''; }
+function matched() { return S.walk && S.walk.status !== 'open'; }
+
+function renderSteps() {
+  const nav = $('steps'); nav.replaceChildren();
+  const list = steps();
+  const cur = currentKey();
+  list.forEach(s => {
+    let cls = 'step';
+    if (s.key === 'join' && S.token) cls += ' done';
+    if (s.round) { const st = roundState(s.round); if (st === 'met') cls += ' done'; if (st === 'skipped') cls += ' skipped'; }
+    if (s.key === 'done' && S.progress.done) cls += ' done';
+    if (s.key === cur) cls += ' current';
+    const can = S.token && here() && matched() && s.key !== 'join';
+    const b = h('button', { class: cls, type: 'button', disabled: !can, 'aria-current': s.key === cur ? 'step' : null,
+      onclick: () => { S.step = s.key; render(); window.scrollTo({ top: 0 }); } },
+      h('span', { class: 'bar' }), h('span', { class: 'lbl', text: s.label }));
+    nav.append(b);
+  });
+}
+
+function currentKey() {
+  if (!S.token || !here()) return 'join';
+  if (!matched()) return 'join';
+  if (S.walk.status === 'ended' && !S.step) return 'done';
+  if (S.step) return S.step;
+  const list = steps().filter(s => s.round);
+  const next = list.find(s => !roundState(s.round));
+  return next ? next.key : 'done';
+}
+
+function setBar(...buttons) {
+  const bar = $('bar'); bar.replaceChildren(...buttons.filter(Boolean));
+  bar.hidden = buttons.filter(Boolean).length === 0;
+  bar.classList.toggle('single', buttons.filter(Boolean).length === 1);
+}
+
+function render() {
+  renderSteps();
+  const view = $('view');
+  view.replaceChildren();
+  if (!S.code) return viewCode(view);
+  if (!S.walk) return viewLoading(view);
+  if (!S.token) return S.walk.status === 'ended' ? viewEnded(view) : viewJoin(view);
+  if (!S.me) return viewLoading(view);
+  if (!here()) return S.walk.status === 'ended' ? viewEnded(view) : viewSignedUp(view);
+  if (!matched()) return viewWaiting(view);
+  const key = currentKey();
+  if (key === 'done') return viewDone(view);
+  const r = Number(key.slice(1));
+  return viewMatch(view, r);
+}
+
+function viewLoading(view) {
+  view.append(h('p', { class: 'pulse', text: 'Finding your walk' }));
+  setBar();
+}
+
+function viewCode(view) {
+  const err = h('p', { class: 'error', hidden: true });
+  const input = h('input', { class: 'input', id: 'code', name: 'code', autocomplete: 'off', inputmode: 'text', autocapitalize: 'characters', maxlength: '8', placeholder: 'e.g. KXTP', required: true, style: 'text-transform:uppercase;letter-spacing:.2em;font-family:var(--mono)' });
+  const form = h('form', { onsubmit: e => {
+      e.preventDefault();
+      const c = input.value.toUpperCase().replace(/[^A-Z]/g, '');
+      if (c.length < 4) { err.textContent = 'The code is 4 letters, shown on the host\'s screen.'; err.hidden = false; return; }
+      const u = new URL(location.href); u.searchParams.set('w', c); location.href = u.toString();
+    } },
+    h('div', { class: 'field' }, h('label', { for: 'code', text: 'Walk code' }), input), err,
+    h('button', { class: 'btn btn-primary wide', type: 'submit', text: 'Find the walk' }));
+  view.append(
+    h('div', { class: 'lead' }, h('span', { class: 'eyebrow', text: 'Join a walk' }),
+      h('h2', { text: 'Got a walk code?' }),
+      h('p', { text: 'Scan the QR code at the start, or type the 4-letter code your host shows you.' })),
+    form);
+  setBar();
+}
+
+function viewEnded(view) {
+  view.append(h('div', { class: 'lead' }, h('span', { class: 'eyebrow', text: 'This walk has wrapped up' }),
+    h('h2', { text: 'See you at the next one.' }),
+    h('p', { text: 'Founders Walk runs every month in Carlton: a walk, then coffee.' })));
+  setBar(h('a', { class: 'btn btn-primary', href: S.walk.nextWalkUrl, target: '_blank', rel: 'noopener', text: 'See upcoming walks' }));
+}
+
+function viewJoin(view) {
+  const err = h('p', { class: 'error', hidden: true });
+  const roleChips = h('div', { class: 'chips', role: 'radiogroup', 'aria-labelledby': 'roleLbl' },
+    ['Founder', 'Operator', 'Investor', 'Creator', 'Other'].map((r, i) =>
+      h('label', { class: 'chip-toggle' }, h('input', { type: 'radio', name: 'role', value: r, id: 'role-' + i, checked: i === 0 }), h('span', { text: r }))));
+  const f = (id, label, attrs, hint) => h('div', { class: 'field' },
+    h('label', { for: id }, label, hint ? h('span', { class: 'hint', text: ' ' + hint }) : null),
+    h('input', { class: 'input', id, name: id, ...attrs }));
+  const submitLabel = S.key ? 'Check in' : 'Sign up';
+  const submit = h('button', { class: 'btn btn-primary wide', type: 'submit', form: 'joinForm', text: submitLabel });
+  const form = h('form', { id: 'joinForm', novalidate: true, onsubmit: async e => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const body = Object.fromEntries(fd.entries());
+      body.consent = fd.get('consent') === 'on';
+      body.code = S.code;
+      if (S.key) body.key = S.key;
+      if (!String(body.name || '').trim()) { err.textContent = 'Add your name so your match can find you.'; err.hidden = false; return; }
+      if (!body.consent) { err.textContent = 'Tick the box so we can share your details with your matches.'; err.hidden = false; return; }
+      submit.disabled = true; submit.textContent = 'Saving';
+      try {
+        const res = await api('join', { body });
+        S.token = res.token; store.set('fw:' + S.code, { token: res.token });
+        if (res.returning) toast('Welcome back. We found your sign-up.');
+        await refresh(true);
+      } catch (ex) {
+        err.textContent = ex.message; err.hidden = false; submit.disabled = false; submit.textContent = submitLabel;
+      }
+    } },
+    f('name', 'First name', { autocomplete: 'given-name', maxlength: '40', required: true, placeholder: 'What people call you' }),
+    f('oneliner', 'What are you building?', { maxlength: '90', placeholder: 'e.g. a booking app for physio clinics' }, '(one line)'),
+    h('div', { class: 'field' }, h('span', { class: 'legend', id: 'roleLbl', text: 'You are mostly a' }), roleChips),
+    f('link', 'LinkedIn or website', { type: 'url', inputmode: 'url', autocomplete: 'url', maxlength: '200', placeholder: 'linkedin.com/in/you' }, '(optional)'),
+    f('email', 'Email for your summary', { type: 'email', inputmode: 'email', autocomplete: 'email', maxlength: '120', placeholder: 'you@company.com' }, S.key ? '(signed up already? use the same email and we\'ll find you)' : '(optional)'),
+    h('label', { class: 'consent', for: 'consent' }, h('input', { type: 'checkbox', id: 'consent', name: 'consent' }),
+      h('span', { text: 'Share my name, role, one-liner and link with the people I\'m matched with. Your email stays private. We delete walk details after 30 days.' })),
+    err);
+  view.append(
+    h('div', { class: 'lead' },
+      h('h2', { text: 'Meet two founders you haven\'t met yet.' }),
+      h('p', { text: S.key
+        ? 'Add your name to check in. After the intro circle we\'ll pair you with someone new for the walk, then someone else for coffee.'
+        : 'Sign up now so you\'re ready on the day. At the walk you\'ll scan a QR code to check in, then we\'ll pair you with someone new for the walk and someone else for coffee.' })),
+    form);
+  setBar(submit);
+}
+
+function selfCard() {
+  const me = S.me || {};
+  return h('div', { class: 'person self' },
+    h('div', { class: 'avatar', 'aria-hidden': 'true', text: initials(me.name || '') }),
+    h('div', {}, h('div', { class: 'name', text: me.name }), h('div', { class: 'meta', text: [me.role, me.oneliner].filter(Boolean).join(' · ') || 'Your match will see this.' })));
+}
+
+function viewSignedUp(view) {
+  const started = S.walk.status === 'matched';
+  view.append(
+    h('div', { class: 'lead' }, h('span', { class: 'eyebrow', text: 'You\'re signed up' }),
+      h('h2', { text: started ? 'Matching has started. Check in to join.' : 'See you on ' + prettyDate(S.walk.date) + ', ' + (S.me ? S.me.name : '') + '.' }),
+      h('p', { text: started
+        ? 'Scan the QR code on the host\'s phone and we\'ll add you to a pair straight away.'
+        : 'When you arrive, scan the QR code on the host\'s phone to check in. Only people who check in get matched, so nobody is paired with an empty spot.' })),
+    h('div', { class: 'field' }, h('span', { class: 'legend', text: 'What your matches will see' }), selfCard()),
+    h('p', { class: 'small', text: 'Can\'t scan on the day? Ask the host to check you in.' }));
+  setBar();
+}
+
+function viewWaiting(view) {
+  view.append(
+    h('div', { class: 'lead' }, h('span', { class: 'eyebrow', text: 'You\'re in' }),
+      h('h2', { text: 'You\'re checked in, ' + (S.me ? S.me.name : '') + '.' }),
+      h('p', { text: 'Matching starts after intros. Keep this page open and your first match will appear here.' })),
+    h('div', { class: 'count' }, h('span', { class: 'num', id: 'countNum', text: String(S.count) }), h('span', { class: 'cap', id: 'countCap', text: S.count === 1 ? 'person checked in so far' : 'people checked in so far' })),
+    h('p', { class: 'pulse', text: DEMO ? 'In this preview, matching starts by itself in a few seconds' : 'Waiting for the host to start matching' }),
+    h('div', { class: 'field' }, h('span', { class: 'legend', text: 'In the lobby' }), h('div', { class: 'lobby', id: 'lobby' })),
+    h('div', { class: 'field' }, h('span', { class: 'legend', text: 'What your matches will see' }), selfCard()));
+  fillLobby();
+  setBar();
+}
+
+// Everyone checked in so far, newest last. Updated in place on each poll so the page doesn't jump.
+function fillLobby() {
+  const el = $('lobby'); if (!el) return;
+  const list = S.lobby || [];
+  el.replaceChildren(...(list.length ? list.map(p => h('span', { class: 'lchip' + (S.me && p.id === S.me.id ? ' me' : '') },
+      h('span', { class: 'lav', 'aria-hidden': 'true', text: initials(p.name) }),
+      h('span', { text: (S.me && p.id === S.me.id ? 'You' : p.name.split(' ')[0]) + (p.role ? ' · ' + p.role : '') })))
+    : [h('p', { class: 'small', text: 'Just you so far.' })]));
+}
+
+function ensureCards(r) {
+  const round = S.progress.rounds[r] || (S.progress.rounds[r] = { state: '', cards: [] });
+  if (!round.cards || round.cards.length !== 3 || round.cards.some(c => !Q[c.cat] || !Q[c.cat][c.i])) {
+    round.cards = defaultCards(S.code, r).map(cardData);
+  }
+  return round.cards;
+}
+
+function reshuffle(r, k) {
+  const cards = ensureCards(r);
+  const cat = cards[k].cat;
+  const taken = new Set();
+  Object.values(S.progress.rounds).forEach(rd => (rd.cards || []).forEach(c => { if (c.cat === cat) taken.add(c.i); }));
+  let pool = Q[cat].map((_, i) => i).filter(i => !taken.has(i));
+  if (!pool.length) pool = Q[cat].map((_, i) => i).filter(i => i !== cards[k].i);
+  cards[k] = cardData({ cat, i: pool[Math.floor(Math.random() * pool.length)] });
+  saveProgress();
+}
+
+function personRow(p) {
+  return h('div', { class: 'person' },
+    h('div', { class: 'avatar', 'aria-hidden': 'true', text: initials(p.name) }),
+    h('div', { style: 'min-width:0' },
+      h('div', { class: 'name', text: p.name }),
+      h('div', { class: 'meta', text: [p.role, p.oneliner].filter(Boolean).join(' · ') })),
+    p.link ? h('a', { class: 'link', href: p.link, target: '_blank', rel: 'noopener noreferrer', text: linkLabel(p.link) + ' ↗' }) : null);
+}
+
+function viewMatch(view, r) {
+  const m = S.matches.find(x => x.round === r);
+  const total = steps().filter(s => s.round).length;
+  const state = roundState(r);
+  if (!m || !m.people.length) {
+    view.append(h('div', { class: 'lead' }, h('span', { class: 'eyebrow', text: 'Match ' + r + ' of ' + total }),
+      h('h2', { text: 'No match this round.' }), h('p', { text: 'Grab the host and they\'ll pair you up.' })));
+    setBar(h('button', { class: 'btn btn-primary', type: 'button', onclick: () => advance(r, 'skipped'), text: 'Next' }));
+    return;
+  }
+  const cards = ensureCards(r);
+  const lead = r === 1 ? 'Walk with ' + names(m.people) : 'Next up: ' + names(m.people);
+
+  const track = h('div', { class: 'cards', id: 'cards-' + r, tabindex: '0', 'aria-label': 'Question cards, swipe for more' });
+  const dots = h('div', { class: 'dots', 'aria-hidden': 'true' }, cards.map((_, k) => h('i', { class: k === (S.cardIdx[r] || 0) ? 'on' : '' })));
+  cards.forEach((c, k) => {
+    const text = h('p', { class: 'qtext', text: c.text });
+    const btn = h('button', { class: 'shuffle', type: 'button', 'aria-label': 'Another ' + c.label + ' question', onclick: () => {
+        text.classList.add('swap');
+        setTimeout(() => { reshuffle(r, k); text.textContent = ensureCards(r)[k].text; text.classList.remove('swap'); }, 180);
+      } }, '↻ Another');
+    track.append(h('article', { class: 'qcard' },
+      h('span', { class: 'cat cat-' + c.cat, text: c.label }), text,
+      h('div', { class: 'qfoot' }, h('span', { text: (k + 1) + ' / 3' }), btn)));
+  });
+  track.addEventListener('scroll', () => {
+    const w = track.firstElementChild ? track.firstElementChild.getBoundingClientRect().width + 12 : 1;
+    const idx = Math.max(0, Math.min(2, Math.round(track.scrollLeft / w)));
+    if (idx !== S.cardIdx[r]) { S.cardIdx[r] = idx; [...dots.children].forEach((d, i) => d.classList.toggle('on', i === idx)); }
+  }, { passive: true });
+
+  const shuffleAll = h('button', { class: 'btn btn-quiet', type: 'button', onclick: () => {
+      [0, 1, 2].forEach(k => reshuffle(r, k)); render(); toast('Three new questions');
+    } }, '↻ Shuffle all');
+
+  view.append(
+    h('div', { class: 'lead' }, h('span', { class: 'eyebrow', text: 'Match ' + r + ' of ' + total + (state === 'met' ? ' · Met' : state === 'skipped' ? ' · Skipped' : '') }),
+      h('h2', { text: lead })),
+    h('div', { class: 'match' }, m.people.map(personRow)),
+    h('div', { class: 'qhead' }, h('span', { class: 'eyebrow', text: 'Talk about' }), shuffleAll),
+    track, dots);
+
+  const idx = S.cardIdx[r] || 0;
+  if (idx) requestAnimationFrame(() => { const c = track.children[idx]; if (c) track.scrollLeft = c.offsetLeft - track.offsetLeft - 16; });
+
+  const nextLabel = r < total ? 'Next match' : 'Finish';
+  setBar(
+    h('button', { class: 'btn btn-ghost', type: 'button', onclick: () => advance(r, 'skipped'), text: state === 'skipped' ? 'Skipped' : 'Skip for now' }),
+    h('button', { class: 'btn btn-primary', type: 'button', onclick: () => advance(r, 'met') }, state === 'met' ? nextLabel + ' →' : 'We\'ve met ✓'));
+}
+
+function advance(r, state) {
+  const round = S.progress.rounds[r] || (S.progress.rounds[r] = { state: '', cards: ensureCards(r) });
+  if (state === 'met' || !round.state) round.state = state;
+  else if (state === 'skipped' && round.state === 'skipped') round.state = 'skipped';
+  const list = steps();
+  const i = list.findIndex(s => s.key === 'm' + r);
+  S.step = list[i + 1] ? list[i + 1].key : 'done';
+  if (S.step === 'done') S.progress.done = true;
+  saveProgress(S.step === 'done');
+  render(); window.scrollTo({ top: 0 });
+}
+
+function viewDone(view) {
+  const ended = S.walk.status === 'ended';
+  if (!S.progress.done && !ended) { S.progress.done = true; saveProgress(true); }
+  const rows = steps().filter(s => s.round).map(s => {
+    const m = S.matches.find(x => x.round === s.round);
+    const st = roundState(s.round);
+    return h('div', { class: 'srow' },
+      h('div', { class: 'top-line' },
+        h('span', { class: 'who', text: m && m.people.length ? names(m.people) : 'No match' }),
+        h('span', { class: 'state ' + (st === 'met' ? 'state-met' : st === 'skipped' ? 'state-skipped' : 'state-open'), text: st === 'met' ? 'Met' : st === 'skipped' ? 'Skipped' : 'Not yet' })),
+      m ? m.people.map(p => h('div', { class: 'meta' }, [m.people.length > 1 ? p.name : '', p.role, p.oneliner].filter(Boolean).join(' · '),
+        p.link ? h('div', {}, h('a', { href: p.link, target: '_blank', rel: 'noopener noreferrer', text: linkLabel(p.link) + ' ↗' })) : null)) : null,
+      st !== 'met' && !ended ? h('button', { class: 'btn btn-quiet btn-sm', type: 'button', style: 'justify-self:start;padding-left:0', onclick: () => { S.step = s.key; render(); } }, 'Go back to match ' + s.round) : null);
+  });
+
+  const me = S.me || {};
+  let mail;
+  if (me.email && me.emailed) {
+    mail = h('div', { class: 'mailbox' }, h('p', {}, 'Summary sent to ', h('strong', { text: me.email }), '. Check your inbox.'));
+  } else if (me.email) {
+    mail = h('div', { class: 'mailbox' }, h('p', {}, 'Sending your summary to ', h('strong', { text: me.email }), '. If it hasn\'t arrived by tonight, your host will send it after the walk.'));
+  } else {
+    const err = h('p', { class: 'error', hidden: true });
+    const input = h('input', { class: 'input', id: 'doneEmail', type: 'email', inputmode: 'email', autocomplete: 'email', placeholder: 'you@company.com' });
+    const go = h('button', { class: 'btn btn-primary btn-sm', type: 'submit', text: 'Email me' });
+    mail = h('form', { class: 'mailbox', onsubmit: async e => {
+        e.preventDefault();
+        const v = input.value.trim();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { err.textContent = 'That email doesn\'t look right.'; err.hidden = false; return; }
+        go.disabled = true;
+        try {
+          const res = await api('progress', { body: { code: S.code, token: S.token, progress: S.progress, email: v } });
+          S.me.email = v; S.me.emailed = res.emailed; render();
+        } catch (ex) { err.textContent = ex.message; err.hidden = false; go.disabled = false; }
+      } },
+      h('p', { text: 'Want this list in your inbox, with everyone\'s links?' }),
+      h('div', { class: 'row' }, input, go), err);
+  }
+
+  view.append(
+    h('div', { class: 'lead' }, h('span', { class: 'eyebrow', text: ended ? 'The walk has wrapped up' : 'Done' }),
+      h('h2', { text: 'Good walk, ' + (me.name || 'friend') + '.' }),
+      h('p', { text: 'Here\'s who you were matched with. Say hi on LinkedIn while it\'s fresh.' })),
+    h('div', { class: 'summary' }, rows),
+    mail);
+  setBar(h('a', { class: 'btn btn-ghost', href: S.walk.nextWalkUrl, target: '_blank', rel: 'noopener', text: 'See the next walk' }));
+}
+
+let saveTimer = null;
+function saveProgress(now) {
+  // A local copy too, so a dropped connection doesn't lose anything.
+  store.set('fw:' + S.code, { token: S.token, progress: S.progress });
+  clearTimeout(saveTimer);
+  const send = async () => {
+    try {
+      const res = await api('progress', { body: { code: S.code, token: S.token, progress: S.progress } });
+      if (S.me && res.emailed !== S.me.emailed) { S.me.emailed = res.emailed; if (currentKey() === 'done') render(); }
+    } catch (ex) { if (ex.status !== 404) toast('Couldn\'t save. We\'ll try again.'); }
+  };
+  if (now) send(); else saveTimer = setTimeout(send, 500);
+}
+
+async function refresh(force) {
+  try {
+    if (!S.token) {
+      const res = await api('walk', { params: { code: S.code } });
+      S.walk = res.walk; S.count = res.count;
+      if (force || !S.sig) { S.sig = 'nojoin'; render(); }
+      return;
+    }
+    const res = await api('me', { params: { code: S.code, token: S.token } });
+    const sig = JSON.stringify([res.walk.status, res.matches, res.me.checkedIn]);
+    const firstLoad = !S.me;
+    if (!res.me.checkedIn && S.key && !S.checkinTried && res.walk.status !== 'ended') {
+      S.checkinTried = true;
+      try { await api('checkin', { body: { code: S.code, token: S.token, key: S.key } }); toast('Checked in'); return refresh(true); }
+      catch (ex) { toast(ex.message); }
+    }
+    S.walk = res.walk; S.me = res.me; S.matches = res.matches; S.signedUp = res.signedUp;
+    if (firstLoad) S.progress = mergeProgress(res.progress);
+    if (S.count !== res.count) { S.count = res.count; const n = $('countNum'); if (n) n.textContent = String(res.count); const c = $('countCap'); if (c) c.textContent = res.count === 1 ? 'person checked in so far' : 'people checked in so far'; }
+    const lobbySig = JSON.stringify(res.lobby || []);
+    if (lobbySig !== S.lobbySig) { S.lobbySig = lobbySig; S.lobby = res.lobby || []; fillLobby(); }
+    if (force || sig !== S.sig) { S.sig = sig; render(); }
+  } catch (ex) {
+    if (ex.status === 404 && S.token) {
+      store.del('fw:' + S.code); S.token = null; S.me = null; S.sig = ''; return refresh(true);
+    }
+    if (ex.status === 404) {
+      $('view').replaceChildren(h('div', { class: 'lead' }, h('span', { class: 'eyebrow', text: 'Walk not found' }), h('h2', { text: 'We couldn\'t find that walk.' }), h('p', { text: ex.message })));
+      setBar(h('a', { class: 'btn btn-primary', href: location.pathname, text: 'Enter a code' }));
+      S.walk = null; return 'stop';
+    }
+    if (force) toast(ex.message);
+  }
+}
+
+function mergeProgress(server) {
+  const local = (store.get('fw:' + S.code) || {}).progress;
+  const p = server && server.rounds && Object.keys(server.rounds).length ? server : (local || { rounds: {}, done: false });
+  return { rounds: p.rounds || {}, done: !!p.done };
+}
+
+function poll() {
+  const status = S.walk ? S.walk.status : 'open';
+  const delay = !S.token ? 6000 : !here() ? 8000 : status === 'open' ? 3000 : status === 'matched' ? 10000 : 0;
+  if (!delay) return;
+  setTimeout(async () => {
+    if (document.visibilityState !== 'hidden') { const r = await refresh(false); if (r === 'stop') return; }
+    poll();
+  }, delay);
+}
+
+async function bootAttendee() {
+  if (DEMO) $('demoNote').hidden = false;
+  if (!S.code) { render(); return; }
+  const saved = store.get('fw:' + S.code);
+  if (saved && saved.token) S.token = saved.token;
+  render();
+  const r = await refresh(true);
+  if (S.walk) $('where').textContent = (S.walk.place ? S.walk.place + ' · ' : '') + prettyDate(S.walk.date);
+  if (r !== 'stop') poll();
+}
+
+// ================= host =================
+const H = { code: (params.get('w') || '').toUpperCase(), data: null, timer: null };
+
+function hostShell() {
+  $('app').classList.add('wide');
+  $('steps').hidden = true;
+  $('where').textContent = 'Host';
+  if (DEMO) $('demoNote').hidden = false;
+  setBar();
+}
+
+function hostGate() {
+  const view = $('view'); view.replaceChildren();
+  const err = h('p', { class: 'error', hidden: true });
+  const input = h('input', { class: 'input', id: 'pin', type: 'password', autocomplete: 'current-password', placeholder: 'Host PIN' });
+  view.append(h('div', { class: 'panel', style: 'max-width:420px' },
+    h('h3', { text: 'Host screen' }),
+    h('p', { class: 'small', text: 'Enter the host PIN from your config file.' }),
+    h('form', { onsubmit: async e => {
+        e.preventDefault(); hostPin = input.value;
+        try { await api('walks', { host: true }); session.set('fw:pin', hostPin); hostHome(); }
+        catch (ex) { err.textContent = ex.message; err.hidden = false; }
+      } }, input, err, h('button', { class: 'btn btn-primary wide', type: 'submit', text: 'Open host screen' }))));
+}
+
+async function hostHome() {
+  if (H.code) return hostWalk(H.code);
+  const view = $('view'); view.replaceChildren();
+  let walks = [];
+  try { walks = (await api('walks', { host: true })).walks; }
+  catch (ex) { if (ex.status === 401) { session.del('fw:pin'); return hostGate(); } toast(ex.message); }
+  const today = new Date(); const ymd = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  const form = h('form', { onsubmit: async e => {
+      e.preventDefault();
+      const fd = Object.fromEntries(new FormData(form).entries());
+      try { const res = await api('create', { host: true, body: fd }); openWalk(res.code); }
+      catch (ex) { toast(ex.message); }
+    } },
+    h('div', { class: 'field' }, h('label', { for: 'title', text: 'Name' }), h('input', { class: 'input', id: 'title', name: 'title', value: 'Founders Walk', maxlength: '60' })),
+    h('div', { class: 'field' }, h('label', { for: 'place', text: 'Where' }), h('input', { class: 'input', id: 'place', name: 'place', value: 'Carlton', maxlength: '60' })),
+    h('div', { class: 'field' }, h('label', { for: 'date', text: 'Date' }), h('input', { class: 'input', id: 'date', name: 'date', type: 'date', value: ymd })),
+    h('button', { class: 'btn btn-primary wide', type: 'submit', text: 'Start a new walk' }));
+  view.append(h('div', { class: 'host-grid' },
+    h('section', { class: 'panel' }, h('h3', { text: 'New walk' }), form),
+    h('section', { class: 'panel' }, h('h3', { text: 'Recent walks' }),
+      walks.length ? h('div', { class: 'wlist' }, walks.map(w => h('a', { class: 'witem', href: '?host&w=' + encodeURIComponent(w.code), onclick: e => { e.preventDefault(); openWalk(w.code); } },
+        h('span', {}, h('b', { text: w.title + ' · ' + prettyDate(w.date) }), h('br'), h('span', { class: 'small', text: w.here + ' checked in · ' + w.count + ' signed up · code ' + w.code })),
+        h('span', { class: 'pill pill-' + w.status, text: w.status })))) : h('p', { class: 'small', text: 'No walks yet. Start one for today.' }),
+      h('p', { class: 'small', text: 'Walks and everyone\'s details are deleted 30 days after they start.' }))));
+}
+
+function openWalk(code) {
+  H.code = code;
+  const u = new URL(location.href); u.search = '?host&w=' + code; history.replaceState(null, '', u);
+  hostWalk(code);
+}
+
+let qrLoading = null;
+function loadQR() {
+  if (window.QRCode) return Promise.resolve();
+  const add = src => new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.append(s);
+  });
+  // Bundled copy first; the CDN is only a fallback.
+  if (!qrLoading) qrLoading = add('qrcode.min.js').catch(() => add('https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'));
+  return qrLoading;
+}
+
+async function hostWalk(code) {
+  clearTimeout(H.timer);
+  let d;
+  try { d = await api('host', { host: true, params: { code } }); }
+  catch (ex) {
+    if (ex.status === 401) { session.del('fw:pin'); return hostGate(); }
+    if (ex.status === 404) { H.code = ''; toast(ex.message); return hostHome(); }
+    toast(ex.message); H.timer = setTimeout(() => hostWalk(code), 5000); return;
+  }
+  const sig = JSON.stringify(d);
+  if (sig !== H.sig) { H.sig = sig; H.data = d; renderHostWalk(); }
+  if (d.walk.status !== 'ended') H.timer = setTimeout(() => hostWalk(code), 4000);
+}
+
+function renderHostWalk() {
+  const { walk, people, groups } = H.data;
+  const view = $('view'); view.replaceChildren();
+  // Sign-up link: share before the walk. Check-in link (QR): only works for people standing with you.
+  const joinUrl = new URL(location.pathname, location.href); joinUrl.search = '?w=' + walk.code;
+  const checkinUrl = new URL(joinUrl); checkinUrl.search = '?w=' + walk.code + '&k=' + walk.key;
+  if (DEMO) { joinUrl.search = '?w=DEMO&demo'; checkinUrl.search = '?w=DEMO&demo'; }
+  const qr = h('div', { class: 'qr', 'aria-label': 'QR code to join' });
+  loadQR().then(() => { qr.replaceChildren(); new window.QRCode(qr, { text: checkinUrl.toString(), width: 440, height: 440, colorDark: '#16140f', colorLight: '#ffffff', correctLevel: window.QRCode.CorrectLevel.M }); })
+    .catch(() => { qr.replaceChildren(h('p', { class: 'small', style: 'line-height:1.4;width:200px', text: 'QR code couldn\'t load. Share the link below instead.' })); });
+
+  const byId = Object.fromEntries(people.map(p => [p.id, p]));
+  const doneCount = people.filter(p => p.done).length;
+  const hereCount = people.filter(p => p.checkedIn).length;
+  const sorted = [...people.filter(p => p.checkedIn), ...people.filter(p => !p.checkedIn)];
+
+  const copy = h('button', { class: 'btn btn-ghost btn-sm', type: 'button', onclick: async () => {
+      try { await navigator.clipboard.writeText(joinUrl.toString()); toast('Sign-up link copied'); } catch { toast('Copy failed. Press and hold the link to copy it.'); }
+    } }, 'Copy sign-up link');
+
+  const actions = h('div', { class: 'btnrow' });
+  const act = async (a, msg) => {
+    try { const r = await api(a, { host: true, body: { code: walk.code } }); H.sig = ''; await hostWalk(walk.code);
+      toast(a === 'end' ? (DEMO ? 'Walk ended. The preview sends no email.' : `Walk ended. ${r.sent} summaries sent${r.rollup ? ', roll-up sent to you' : ''}.`) : msg);
+    } catch (ex) { toast(ex.message); }
+  };
+  if (walk.status === 'open') {
+    const missing = people.length - hereCount;
+    const startBtn = h('button', { class: 'btn btn-primary', type: 'button', disabled: hereCount < 2, text: `Start matching (${hereCount} here)` });
+    actions.append(hereCount < 2 ? startBtn : confirmButton(startBtn,
+      missing ? `Tap again: match ${hereCount}, leave ${missing} not here` : `Tap again to match all ${hereCount}`,
+      () => act('start', 'Matched. Everyone checked in can see their match.')));
+  } else if (walk.status === 'matched') {
+    actions.append(
+      confirmButton(h('button', { class: 'btn btn-primary', type: 'button', text: 'End walk & send summaries' }), 'Tap again to end and email everyone', () => act('end')),
+      confirmButton(h('button', { class: 'btn btn-ghost', type: 'button', text: 'Reshuffle' }), 'Tap again: everyone gets new matches', () => act('reshuffle', 'New matches sent')));
+  }
+  actions.append(h('button', { class: 'btn btn-ghost', type: 'button', onclick: downloadCsv, text: 'Download CSV' }));
+
+  const plist = h('div', { class: 'plist' }, sorted.length ? sorted.map(p => {
+      const mk = r => { const st = (p.progress.rounds[r] || {}).state || ''; return h('span', { class: 'mk ' + st, title: 'Match ' + r + ': ' + (st || 'not yet'), text: String(r) }); };
+      const checkInBtn = walk.status === 'ended' ? null : h('button', { class: 'btn btn-ghost btn-sm', type: 'button', style: 'min-height:32px;padding:4px 12px', onclick: async () => {
+          try { await api('host_checkin', { host: true, body: { code: walk.code, id: p.id } }); H.sig = ''; hostWalk(walk.code); toast(p.name + ' checked in'); } catch (ex) { toast(ex.message); }
+        } }, 'Check in');
+      return h('div', { class: 'prow', style: p.checkedIn ? null : 'opacity:.72' },
+        h('span', { class: 'nm', text: p.name + (p.late ? ' · late' : '') }),
+        h('span', { class: 'marks' }, !p.checkedIn ? checkInBtn : walk.status !== 'open' ? [1, 2].slice(0, groups.length).map(mk) : null,
+          confirmButton(h('button', { class: 'x', type: 'button', 'aria-label': 'Remove ' + p.name, text: 'Remove' }), 'Sure?', async () => {
+            try { await api('remove', { host: true, body: { code: walk.code, id: p.id } }); H.sig = ''; hostWalk(walk.code); } catch (ex) { toast(ex.message); }
+          })),
+        h('span', { class: 'sub', text: [p.checkedIn ? 'Here' : 'Signed up, not here yet', p.role, p.oneliner, p.email ? '✉ email' : 'no email'].filter(Boolean).join(' · ') }));
+    }) : h('p', { class: 'small', text: 'Nobody yet. Share the sign-up link before the walk, or show the QR code on the day.' }));
+
+  const groupsEl = walk.status === 'open' ? null : h('section', { class: 'panel' }, h('h3', { text: 'Matches' }),
+    h('div', { class: 'groups' }, groups.map((gs, i) => h('div', {},
+      h('span', { class: 'eyebrow', text: 'Match ' + (i + 1) }),
+      h('ol', {}, gs.map(g => h('li', { text: g.map(id => (byId[id] || {}).name || '?').join(' + ') })))))));
+
+  view.append(h('div', { class: 'host-grid' },
+    h('section', { class: 'panel', style: 'justify-items:stretch' },
+      h('div', { class: 'qhead' }, h('h3', { text: walk.title }), h('span', { class: 'pill pill-' + walk.status, text: walk.status })),
+      h('p', { class: 'small', text: (walk.place ? walk.place + ' · ' : '') + prettyDate(walk.date) }),
+      h('span', { class: 'eyebrow', style: 'text-align:center', text: 'On the day: scan to check in' }),
+      qr, h('div', { class: 'code', text: walk.code }),
+      h('p', { class: 'small', style: 'text-align:center', text: 'Can\'t scan? They type this code on the site to sign up, then tap Check in next to their name.' }),
+      h('span', { class: 'eyebrow', style: 'text-align:center;margin-top:6px', text: 'Before the walk: share to sign up' }),
+      h('div', { class: 'urlbox', text: joinUrl.toString() }), copy,
+      h('button', { class: 'btn btn-quiet btn-sm', type: 'button', onclick: () => { H.code = ''; clearTimeout(H.timer); history.replaceState(null, '', '?host'); hostHome(); } }, '← All walks')),
+    h('div', { style: 'display:grid;gap:16px;min-width:0' },
+      h('section', { class: 'panel' },
+        h('div', { class: 'qhead' }, h('h3', { text: hereCount + ' here' }),
+          h('span', { class: 'small', text: (people.length - hereCount) + ' signed up, not here' + (walk.status !== 'open' ? ' · ' + doneCount + ' finished' : '') })),
+        actions, plist),
+      groupsEl)));
+}
+
+async function downloadCsv() {
+  try {
+    const res = await api('csv', { host: true, params: { code: H.code } });
+    const blob = await res.blob();
+    const a = h('a', { href: URL.createObjectURL(blob), download: 'founders-walk-' + H.data.walk.date + '.csv' });
+    document.body.append(a); a.click(); a.remove();
+  } catch (ex) { toast(ex.message); }
+}
+
+// ================= boot =================
+if (IS_HOST) {
+  hostShell();
+  if (DEMO) { hostPin = 'demo'; hostHome(); }
+  else if (hostPin) hostHome(); else hostGate();
+} else {
+  bootAttendee();
+}
+})();
+</script>
+</body>
+</html>
