@@ -74,6 +74,8 @@ function db(): PDO
     $cols = fn($t) => array_column($pdo->query("PRAGMA table_info($t)")->fetchAll(), 'name');
     if (!in_array('checkin_key', $cols('walks'), true)) $pdo->exec("ALTER TABLE walks ADD COLUMN checkin_key TEXT NOT NULL DEFAULT ''");
     if (!in_array('checked_in_at', $cols('people'), true)) $pdo->exec('ALTER TABLE people ADD COLUMN checked_in_at INTEGER');
+    if (!in_array('gen', $cols('walks'), true)) $pdo->exec('ALTER TABLE walks ADD COLUMN gen INTEGER NOT NULL DEFAULT 0');
+    if (!in_array('listed', $cols('people'), true)) $pdo->exec('ALTER TABLE people ADD COLUMN listed INTEGER NOT NULL DEFAULT 0');
     return $pdo;
 }
 
@@ -199,6 +201,9 @@ function walkInfo(array $w): array
         'status' => $w['status'],
         'rounds' => count($w['rounds']),
         'nextWalkUrl' => FW_NEXT_WALK_URL,
+        'mailOn' => FW_MAIL_MODE === 'mail',
+        // Goes up each time the host reshuffles or restarts, so phones drop their old progress.
+        'gen' => (int)($w['gen'] ?? 0),
     ];
 }
 
@@ -475,10 +480,10 @@ function sendSummary(array $walk, array $person, array $byId): bool
         '<h1 style="font-family:Georgia,serif;font-weight:500;font-size:28px;margin:10px 0 6px">Good walk, ' . e($person['name']) . '.</h1>'
         . '<p style="margin:0;color:#57534a;font-size:15px;line-height:1.5">Thanks for joining ' . e($walk['title']) . ' on ' . e($date) . '. Here\'s who you were matched with, so you can stay in touch.</p>'
         . $rows
-        . '<p style="margin-top:26px;font-size:15px"><a href="' . e(FW_NEXT_WALK_URL) . '" style="display:inline-block;background:#16140f;color:#f3efe6;text-decoration:none;padding:12px 18px;border-radius:999px">See the next walk</a></p>'
+        . '<p style="margin-top:26px;font-size:15px">Thanks for choosing Founders Walk.</p>'
         . '<p style="margin-top:22px;font-size:12px;color:#8a8478;line-height:1.5">You got this because you joined Founders Walk and left your email. We delete walk details after ' . FW_RETENTION_DAYS . ' days.</p>'
     );
-    $text .= "\nSee the next walk: " . FW_NEXT_WALK_URL . "\n\nWe delete walk details after " . FW_RETENTION_DAYS . " days.\n";
+    $text .= "\nThanks for choosing Founders Walk.\n\nWe delete walk details after " . FW_RETENTION_DAYS . " days.\n";
     return sendMail($person['email'], "Your Founders Walk matches, $date", $html, $text);
 }
 
@@ -534,15 +539,15 @@ try {
             $role = in_array(param('role'), ROLES, true) ? param('role') : '';
             $email = param('email') === '' ? '' : cleanEmail(param('email'));
             if (param('email') !== '' && $email === '') fail('That email doesn\'t look right. Check it, or leave it blank.');
-            $details = [$name, clean(param('oneliner'), 90), $role, cleanLink(param('link'))];
+            $details = [$name, clean(param('oneliner'), 90), $role, cleanLink(param('link')), empty(input()['listed']) ? 0 : 1];
             // Signed up before on another phone or browser? Pick up that sign-up instead of making a second one.
             $existing = $email === '' ? null
                 : q('SELECT * FROM people WHERE walk_id = ? AND lower(email) = lower(?)', [$w['id'], $email])->fetch();
             if ($existing) {
-                q('UPDATE people SET name = ?, oneliner = ?, role = ?, link = ? WHERE id = ?', [...$details, $existing['id']]);
+                q('UPDATE people SET name = ?, oneliner = ?, role = ?, link = ?, listed = ? WHERE id = ?', [...$details, $existing['id']]);
                 $person = $existing;
             } else {
-                q('INSERT INTO people (walk_id, token, name, oneliner, role, link, email, joined_at) VALUES (?,?,?,?,?,?,?,?)',
+                q('INSERT INTO people (walk_id, token, name, oneliner, role, link, listed, email, joined_at) VALUES (?,?,?,?,?,?,?,?,?)',
                     [$w['id'], bin2hex(random_bytes(16)), ...$details, $email, time()]);
                 $person = q('SELECT * FROM people WHERE id = ?', [db()->lastInsertId()])->fetch();
             }
@@ -568,14 +573,25 @@ try {
                 'ok' => true,
                 'walk' => walkInfo($w),
                 ...counts((int)$w['id']),
-                'me' => publicPerson($p) + ['email' => $p['email'], 'emailed' => (bool)$p['emailed_at'], 'checkedIn' => (bool)$p['checked_in_at']],
+                'me' => publicPerson($p) + ['email' => $p['email'], 'emailed' => (bool)$p['emailed_at'], 'checkedIn' => (bool)$p['checked_in_at'], 'listed' => (bool)$p['listed']],
                 'matches' => $w['status'] === 'open' || !$p['checked_in_at'] ? [] : matchesFor($w, (int)$p['id'], $byId),
                 // The lobby: who else is here, shown only to people who are here, before matching
                 'lobby' => $w['status'] !== 'open' || !$p['checked_in_at'] ? [] : array_values(array_map(
                     fn($x) => ['id' => (int)$x['id'], 'name' => $x['name'], 'role' => $x['role']],
                     array_filter($byId, fn($x) => $x['checked_in_at']))),
+                // Everyone at the walk who opted in to the attendee list, once matching has started
+                'attendees' => $w['status'] === 'open' || !$p['checked_in_at'] ? [] : array_values(array_map('publicPerson',
+                    array_filter($byId, fn($x) => $x['checked_in_at'] && $x['listed'] && (int)$x['id'] !== (int)$p['id']))),
                 'progress' => cleanProgress(json_decode($p['progress'], true)),
             ]);
+        }
+
+        case 'listme': {
+            if (!$isPost) fail('Use POST.', 405);
+            $w = walkByCode(param('code'));
+            $p = personByToken($w, param('token'));
+            q('UPDATE people SET listed = ? WHERE id = ?', [empty(input()['listed']) ? 0 : 1, $p['id']]);
+            out(['ok' => true]);
         }
 
         case 'progress': {
@@ -664,7 +680,21 @@ try {
             saveRounds($w);
             q('UPDATE walks SET status = \'matched\' WHERE id = ?', [$w['id']]);
             // A fresh shuffle means fresh progress.
-            if ($a === 'reshuffle') q('UPDATE people SET progress = \'{}\', done_at = NULL WHERE walk_id = ? AND emailed_at IS NULL', [$w['id']]);
+            if ($a === 'reshuffle') {
+                q('UPDATE people SET progress = \'{}\', done_at = NULL WHERE walk_id = ? AND emailed_at IS NULL', [$w['id']]);
+                q('UPDATE walks SET gen = gen + 1 WHERE id = ?', [$w['id']]);
+            }
+            out(['ok' => true]);
+        }
+
+        case 'restart':   // back to the lobby: matches cleared, everyone stays checked in
+        case 'clear': {   // start over: everyone removed, same code and QR
+            if (!$isPost) fail('Use POST.', 405);
+            requireHost();
+            $w = walkByCode(param('code'));
+            if ($a === 'clear') q('DELETE FROM people WHERE walk_id = ?', [$w['id']]);
+            else q('UPDATE people SET progress = \'{}\', done_at = NULL, emailed_at = NULL WHERE walk_id = ?', [$w['id']]);
+            q('UPDATE walks SET status = \'open\', rounds = \'[]\', late = \'[]\', ended_at = NULL, gen = gen + 1 WHERE id = ?', [$w['id']]);
             out(['ok' => true]);
         }
 

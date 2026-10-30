@@ -129,7 +129,15 @@ form { display: grid; gap: 14px; }
   display: inline-flex; align-items: center; min-height: 38px; padding: 7px 14px; border-radius: 99px;
   border: 1px solid var(--rule); background: var(--surface); cursor: pointer; font-size: 14px;
 }
-.chip-toggle input:checked + span { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+/* Each role has its own UC brand colour: a dot when unselected, filled when picked. */
+.role-founder  { --role: #bbab69; --role-ink: #16140f; }  /* UC gold */
+.role-operator { --role: #2e6b4f; --role-ink: #f3efe6; }  /* UC green, lifted to read on dark */
+.role-investor { --role: #5271ff; --role-ink: #ffffff; }  /* UC blue */
+.role-creator  { --role: #b3bcf2; --role-ink: #16140f; }  /* periwinkle, UC blue's tint */
+.role-other    { --role: var(--fg); --role-ink: var(--bg); }
+.chip-toggle span::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--role, var(--fg)); margin-right: 8px; }
+.chip-toggle input:checked + span { background: var(--role, var(--fg)); color: var(--role-ink, var(--bg)); border-color: var(--role, var(--fg)); }
+.chip-toggle input:checked + span::before { background: var(--role-ink, var(--bg)); }
 .chip-toggle input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
 .consent { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; font-size: 13.5px; color: var(--fg2); }
 .consent input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--fg); }
@@ -172,10 +180,13 @@ form { display: grid; gap: 14px; }
   animation: pulse 1.6s ease-in-out infinite;
 }
 @keyframes pulse { 50% { opacity: .25; transform: scale(.7); } }
+.armed { position: relative; overflow: hidden; background: var(--accent) !important; color: #16140f !important; border-color: var(--accent) !important; }
+.armed::after { content: ""; position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; background: #16140f; transform-origin: left; animation: confirmrun var(--confirm-ms, 8000ms) linear forwards; }
+@keyframes confirmrun { to { transform: scaleX(0); } }
 .lobby { display: flex; flex-wrap: wrap; gap: 8px; }
 .lchip { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border-radius: 999px; border: 1px solid var(--rule); background: var(--surface); font-size: 13.5px; animation: pop .3s ease-out; }
 .lchip.me { border-color: var(--accent); }
-.lav { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #16140f; font: 600 11px/1 var(--display); }
+.lav { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--role, var(--accent)); color: var(--role-ink, #16140f); font: 600 11px/1 var(--display); }
 @keyframes pop { from { opacity: 0; transform: scale(.9); } }
 @media (prefers-reduced-motion: reduce) { .lchip { animation: none; } }
 
@@ -245,6 +256,12 @@ form { display: grid; gap: 14px; }
 .srow a { font-size: 13.5px; color: var(--fg); }
 .mailbox { display: grid; gap: 10px; padding: 16px; border-radius: var(--radius); border: 1px dashed var(--rule); }
 .mailbox p { margin: 0; font-size: 14px; color: var(--fg2); }
+.mailbox .legend { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--fg3); }
+.alist { display: grid; gap: 10px; }
+.arow { display: grid; gap: 2px; }
+.arow .meta { font-size: 14px; color: var(--fg); overflow-wrap: anywhere; }
+.arow a { font-size: 13.5px; color: var(--fg2); }
+.thanks { margin: 6px 0 0; text-align: center; font: italic 500 19px/1.3 var(--display); color: var(--fg2); }
 .row { display: flex; gap: 8px; }
 .row .input { flex: 1; min-width: 0; }
 
@@ -464,15 +481,23 @@ function names(list) {
   const n = list.map(p => p.name);
   return n.length <= 1 ? (n[0] || '') : n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1];
 }
+// Two taps for anything that can't be undone. After the first tap the button turns gold
+// and a bar runs down for 8 seconds; tapping again in that time does it.
+const CONFIRM_MS = 8000;
 function confirmButton(btn, label, action) {
-  let armed = false, timer;
+  let armed = false, timer, tick;
+  const orig = btn.textContent;
+  const disarm = () => { armed = false; H.confirming = false; clearTimeout(timer); clearInterval(tick); btn.classList.remove('armed'); btn.textContent = orig; };
   btn.addEventListener('click', () => {
     if (!armed) {
-      armed = true; const orig = btn.textContent; btn.textContent = label;
-      timer = setTimeout(() => { armed = false; btn.textContent = orig; }, 4000);
+      armed = true; H.confirming = true;
+      let left = CONFIRM_MS / 1000;
+      btn.textContent = `${label} · ${left}s`; btn.style.setProperty('--confirm-ms', CONFIRM_MS + 'ms'); btn.classList.add('armed');
+      tick = setInterval(() => { left -= 1; if (left > 0) btn.textContent = `${label} · ${left}s`; }, 1000);
+      timer = setTimeout(disarm, CONFIRM_MS);
       return;
     }
-    clearTimeout(timer); armed = false; action();
+    disarm(); action();
   });
   return btn;
 }
@@ -513,7 +538,7 @@ const Demo = (() => {
     if (p.checkedIn) return; p.checkedIn = true;
     if (walk.status === 'matched') walk.rounds.forEach(r => { r.sort((x, y) => x.length - y.length)[0].push(p.id); });
   }
-  const info = () => ({ code: walk.code, title: walk.title, place: walk.place, date: walk.date, status: walk.status, rounds: walk.rounds.length, nextWalkUrl: walk.nextWalkUrl });
+  const info = () => ({ code: walk.code, title: walk.title, place: walk.place, date: walk.date, status: walk.status, rounds: walk.rounds.length, nextWalkUrl: walk.nextWalkUrl, gen: walk.gen || 0, mailOn: false });
   const find = t => { const p = people.find(p => p.token === t); if (!p) { const e = new Error('We could not find you on this walk. Join again to get matched.'); e.status = 404; throw e; } return p; };
   return {
     async call(a, { params: p, body }) {
@@ -524,7 +549,7 @@ const Demo = (() => {
         case 'join': {
           if (!String(b.name || '').trim()) throw new Error('Add your name so your match can find you.');
           if (!b.consent) throw new Error('Tick the box so we can share your details with your matches.');
-          const me = { id: nextId++, token: 'me' + nextId, name: b.name.trim().slice(0, 40), role: b.role || '', oneliner: (b.oneliner || '').slice(0, 90), link: b.link ? (/^https?:/i.test(b.link) ? b.link : 'https://' + b.link) : '', email: b.email || '', progress: { rounds: {}, done: false }, emailed: false };
+          const me = { id: nextId++, token: 'me' + nextId, listed: !!b.listed, name: b.name.trim().slice(0, 40), role: b.role || '', oneliner: (b.oneliner || '').slice(0, 90), link: b.link ? (/^https?:/i.test(b.link) ? b.link : 'https://' + b.link) : '', email: b.email || '', progress: { rounds: {}, done: false }, emailed: false };
           people.push(me);
           if (b.key) checkIn(me);
           if (walk.status === 'open' && me.checkedIn) { clearTimeout(autoStart); autoStart = setTimeout(start, 6000); }
@@ -537,8 +562,11 @@ const Demo = (() => {
         }
         case 'me': {
           const me = find(p.token);
-          return { ok: true, walk: info(), ...counts(), me: { ...pub(me), email: me.email, emailed: me.emailed, checkedIn: me.checkedIn }, matches: walk.status === 'open' || !me.checkedIn ? [] : matchesFor(me.id), progress: me.progress,
-            lobby: walk.status !== 'open' || !me.checkedIn ? [] : here().map(x => ({ id: x.id, name: x.name, role: x.role })) };
+          return { ok: true, walk: info(), ...counts(), me: { ...pub(me), email: me.email, emailed: me.emailed, checkedIn: me.checkedIn, listed: !!me.listed }, matches: walk.status === 'open' || !me.checkedIn ? [] : matchesFor(me.id), progress: me.progress,
+            lobby: walk.status !== 'open' || !me.checkedIn ? [] : here().map(x => ({ id: x.id, name: x.name, role: x.role })),
+            attendees: walk.status === 'open' || !me.checkedIn ? [] : here().filter(x => x.listed !== false && x.id !== me.id).map(pub) };
+        }
+        case 'listme': { find(b.token).listed = !!b.listed; return { ok: true };
         }
         case 'progress': {
           const me = find(b.token); me.progress = b.progress; if (b.email) me.email = b.email;
@@ -555,6 +583,9 @@ const Demo = (() => {
           clearTimeout(autoStart); start(); return { ok: true };
         case 'remove': { const i = people.findIndex(x => x.id === Number(b.id)); if (i >= 0) people.splice(i, 1); walk.rounds = walk.rounds.map(gs => gs.map(g => g.filter(x => x !== Number(b.id))).filter(g => g.length)); return { ok: true }; }
         case 'end': walk.status = 'ended'; return { ok: true, sent: 0, rollup: false };
+        case 'restart': case 'clear':
+          if (a === 'clear') people.length = 0; else people.forEach(x => { x.progress = { rounds: {}, done: false }; x.done = false; });
+          walk.status = 'open'; walk.rounds = []; walk.gen = (walk.gen || 0) + 1; return { ok: true };
         case 'csv': { const e = new Error('CSV downloads work on the live site.'); throw e; }
       }
       throw new Error('Unknown action.');
@@ -659,16 +690,16 @@ function viewCode(view) {
 
 function viewEnded(view) {
   view.append(h('div', { class: 'lead' }, h('span', { class: 'eyebrow', text: 'This walk has wrapped up' }),
-    h('h2', { text: 'See you at the next one.' }),
-    h('p', { text: 'Founders Walk runs every month in Carlton: a walk, then coffee.' })));
-  setBar(h('a', { class: 'btn btn-primary', href: S.walk.nextWalkUrl, target: '_blank', rel: 'noopener', text: 'See upcoming walks' }));
+    h('h2', { text: 'Thanks for choosing Founders Walk.' }),
+    h('p', { text: 'Founders Walk runs every month in Carlton: a walk, then coffee. See you at the next one.' })));
+  setBar();
 }
 
 function viewJoin(view) {
   const err = h('p', { class: 'error', hidden: true });
   const roleChips = h('div', { class: 'chips', role: 'radiogroup', 'aria-labelledby': 'roleLbl' },
     ['Founder', 'Operator', 'Investor', 'Creator', 'Other'].map((r, i) =>
-      h('label', { class: 'chip-toggle' }, h('input', { type: 'radio', name: 'role', value: r, id: 'role-' + i, checked: i === 0 }), h('span', { text: r }))));
+      h('label', { class: 'chip-toggle role-' + r.toLowerCase() }, h('input', { type: 'radio', name: 'role', value: r, id: 'role-' + i, checked: i === 0 }), h('span', { text: r }))));
   const f = (id, label, attrs, hint) => h('div', { class: 'field' },
     h('label', { for: id }, label, hint ? h('span', { class: 'hint', text: ' ' + hint }) : null),
     h('input', { class: 'input', id, name: id, ...attrs }));
@@ -679,6 +710,7 @@ function viewJoin(view) {
       const fd = new FormData(form);
       const body = Object.fromEntries(fd.entries());
       body.consent = fd.get('consent') === 'on';
+      body.listed = fd.get('listed') === 'on';
       body.code = S.code;
       if (S.key) body.key = S.key;
       if (!String(body.name || '').trim()) { err.textContent = 'Add your name so your match can find you.'; err.hidden = false; return; }
@@ -700,6 +732,8 @@ function viewJoin(view) {
     f('email', 'Email for your summary', { type: 'email', inputmode: 'email', autocomplete: 'email', maxlength: '120', placeholder: 'you@company.com' }, S.key ? '(signed up already? use the same email and we\'ll find you)' : '(optional)'),
     h('label', { class: 'consent', for: 'consent' }, h('input', { type: 'checkbox', id: 'consent', name: 'consent' }),
       h('span', { text: 'Share my name, role, one-liner and link with the people I\'m matched with. Your email stays private. We delete walk details after 30 days.' })),
+    h('label', { class: 'consent', for: 'listed' }, h('input', { type: 'checkbox', id: 'listed', name: 'listed' }),
+      h('span', { text: 'Also add me to this walk\'s attendee list, so everyone who came can find me on LinkedIn. (Optional)' })),
     err);
   view.append(
     h('div', { class: 'lead' },
@@ -748,7 +782,7 @@ function viewWaiting(view) {
 function fillLobby() {
   const el = $('lobby'); if (!el) return;
   const list = S.lobby || [];
-  el.replaceChildren(...(list.length ? list.map(p => h('span', { class: 'lchip' + (S.me && p.id === S.me.id ? ' me' : '') },
+  el.replaceChildren(...(list.length ? list.map(p => h('span', { class: 'lchip' + (S.me && p.id === S.me.id ? ' me' : '') + (p.role ? ' role-' + p.role.toLowerCase() : '') },
       h('span', { class: 'lav', 'aria-hidden': 'true', text: initials(p.name) }),
       h('span', { text: (S.me && p.id === S.me.id ? 'You' : p.name.split(' ')[0]) + (p.role ? ' · ' + p.role : '') })))
     : [h('p', { class: 'small', text: 'Just you so far.' })]));
@@ -861,12 +895,42 @@ function viewDone(view) {
   });
 
   const me = S.me || {};
+  const others = S.attendees || [];
+  const personLine = p => [p.name, p.role, p.oneliner].filter(Boolean).join(' · ');
+
+  // Everyone who opted in to the attendee list (and checked in), with their links.
+  const listToggle = h('label', { class: 'consent', for: 'listMe' },
+    h('input', { type: 'checkbox', id: 'listMe', checked: !!me.listed, onchange: async e => {
+      const on = e.target.checked;
+      try { await api('listme', { body: { code: S.code, token: S.token, listed: on } }); S.me.listed = on; toast(on ? 'You\'re on the list' : 'Removed from the list'); }
+      catch (ex) { e.target.checked = !on; toast(ex.message); }
+    } }),
+    h('span', { text: 'Show me on this list too, so others can find me.' }));
+  const attendees = h('section', { class: 'mailbox' },
+    h('p', { class: 'legend', text: 'Everyone at this walk' }),
+    others.length
+      ? h('div', { class: 'alist' }, others.map(p => h('div', { class: 'arow' },
+          h('div', { class: 'meta', text: personLine(p) }),
+          p.link ? h('a', { href: p.link, target: '_blank', rel: 'noopener noreferrer', text: linkLabel(p.link) + ' ↗' }) : null)))
+      : h('p', { text: 'Nobody else has added themselves yet. People choose this when they check in, or here.' }),
+    listToggle);
+
+  // The summary as plain text: for the email and the copy button.
+  const summaryText = () => {
+    const lines = [`${S.walk.title} · ${prettyDate(S.walk.date)}`, '', 'Who I walked with:'];
+    S.matches.forEach(m => m.people.forEach(p => { lines.push('- ' + personLine(p)); if (p.link) lines.push('  ' + p.link); }));
+    const listed = others.filter(p => p.link);
+    if (listed.length) { lines.push('', 'Everyone who shared their link:'); listed.forEach(p => { lines.push('- ' + personLine(p)); lines.push('  ' + p.link); }); }
+    lines.push('', 'Thanks for choosing Founders Walk.');
+    return lines.join('\n');
+  };
+
   let mail;
-  if (me.email && me.emailed) {
+  if (S.walk.mailOn && me.email && me.emailed) {
     mail = h('div', { class: 'mailbox' }, h('p', {}, 'Summary sent to ', h('strong', { text: me.email }), '. Check your inbox.'));
-  } else if (me.email) {
+  } else if (S.walk.mailOn && me.email) {
     mail = h('div', { class: 'mailbox' }, h('p', {}, 'Sending your summary to ', h('strong', { text: me.email }), '. If it hasn\'t arrived by tonight, your host will send it after the walk.'));
-  } else {
+  } else if (S.walk.mailOn) {
     const err = h('p', { class: 'error', hidden: true });
     const input = h('input', { class: 'input', id: 'doneEmail', type: 'email', inputmode: 'email', autocomplete: 'email', placeholder: 'you@company.com' });
     const go = h('button', { class: 'btn btn-primary btn-sm', type: 'submit', text: 'Email me' });
@@ -882,6 +946,20 @@ function viewDone(view) {
       } },
       h('p', { text: 'Want this list in your inbox, with everyone\'s links?' }),
       h('div', { class: 'row' }, input, go), err);
+  } else {
+    // No mail server needed: open the person's own email app with the summary filled in.
+    const input = h('input', { class: 'input', id: 'doneEmail', type: 'email', inputmode: 'email', autocomplete: 'email', placeholder: 'you@company.com', value: me.email || '' });
+    const go = h('button', { class: 'btn btn-primary btn-sm', type: 'submit', text: 'Email me' });
+    const copy = h('button', { class: 'btn btn-quiet btn-sm', type: 'button', style: 'justify-self:start;padding-left:0', onclick: async () => {
+        try { await navigator.clipboard.writeText(summaryText()); toast('Copied. Paste it into your notes.'); } catch { toast('Couldn\'t copy on this phone. Use Email me instead.'); }
+      } }, 'Copy the list instead');
+    mail = h('form', { class: 'mailbox', onsubmit: e => {
+        e.preventDefault();
+        const to = input.value.trim();
+        location.href = 'mailto:' + encodeURIComponent(to) + '?subject=' + encodeURIComponent('My Founders Walk matches, ' + prettyDate(S.walk.date)) + '&body=' + encodeURIComponent(summaryText());
+      } },
+      h('p', { text: 'Want this list in your inbox? Tap Email me: your email app opens with it filled in, then tap Send.' }),
+      h('div', { class: 'row' }, input, go), copy);
   }
 
   view.append(
@@ -889,14 +967,16 @@ function viewDone(view) {
       h('h2', { text: 'Good walk, ' + (me.name || 'friend') + '.' }),
       h('p', { text: 'Here\'s who you were matched with. Say hi on LinkedIn while it\'s fresh.' })),
     h('div', { class: 'summary' }, rows),
-    mail);
-  setBar(h('a', { class: 'btn btn-ghost', href: S.walk.nextWalkUrl, target: '_blank', rel: 'noopener', text: 'See the next walk' }));
+    attendees,
+    mail,
+    h('p', { class: 'thanks', text: 'Thanks for choosing Founders Walk.' }));
+  setBar();
 }
 
 let saveTimer = null;
 function saveProgress(now) {
   // A local copy too, so a dropped connection doesn't lose anything.
-  store.set('fw:' + S.code, { token: S.token, progress: S.progress });
+  store.set('fw:' + S.code, { token: S.token, progress: S.progress, gen: S.walk ? S.walk.gen : 0 });
   clearTimeout(saveTimer);
   const send = async () => {
     try {
@@ -923,9 +1003,18 @@ async function refresh(force) {
       try { await api('checkin', { body: { code: S.code, token: S.token, key: S.key } }); toast('Checked in'); return refresh(true); }
       catch (ex) { toast(ex.message); }
     }
+    const genChanged = !firstLoad && S.walk && (S.walk.gen || 0) !== (res.walk.gen || 0);
     S.walk = res.walk; S.me = res.me; S.matches = res.matches; S.signedUp = res.signedUp;
     if (firstLoad) S.progress = mergeProgress(res.progress);
+    if (genChanged) {
+      // The host restarted or reshuffled: start this phone afresh.
+      S.progress = { rounds: {}, done: false }; S.step = null; S.sig = '';
+      store.set('fw:' + S.code, { token: S.token, progress: S.progress, gen: res.walk.gen });
+      toast(res.walk.status === 'open' ? 'The host restarted the walk. Back to the lobby.' : 'New matches are in.');
+    }
     if (S.count !== res.count) { S.count = res.count; const n = $('countNum'); if (n) n.textContent = String(res.count); const c = $('countCap'); if (c) c.textContent = res.count === 1 ? 'person checked in so far' : 'people checked in so far'; }
+    const attSig = JSON.stringify(res.attendees || []);
+    if (attSig !== S.attSig) { S.attSig = attSig; S.attendees = res.attendees || []; if (S.sig === sig && currentKey() === 'done') render(); }
     const lobbySig = JSON.stringify(res.lobby || []);
     if (lobbySig !== S.lobbySig) { S.lobbySig = lobbySig; S.lobby = res.lobby || []; fillLobby(); }
     if (force || sig !== S.sig) { S.sig = sig; render(); }
@@ -943,7 +1032,9 @@ async function refresh(force) {
 }
 
 function mergeProgress(server) {
-  const local = (store.get('fw:' + S.code) || {}).progress;
+  const saved = store.get('fw:' + S.code) || {};
+  // Progress saved before the host reshuffled or restarted belongs to the old matches.
+  const local = (saved.gen || 0) === ((S.walk && S.walk.gen) || 0) ? saved.progress : null;
   const p = server && server.rounds && Object.keys(server.rounds).length ? server : (local || { rounds: {}, done: false });
   return { rounds: p.rounds || {}, done: !!p.done };
 }
@@ -1047,7 +1138,7 @@ async function hostWalk(code) {
     toast(ex.message); H.timer = setTimeout(() => hostWalk(code), 5000); return;
   }
   const sig = JSON.stringify(d);
-  if (sig !== H.sig) { H.sig = sig; H.data = d; renderHostWalk(); }
+  if (sig !== H.sig && !H.confirming) { H.sig = sig; H.data = d; renderHostWalk(); }
   if (d.walk.status !== 'ended') H.timer = setTimeout(() => hostWalk(code), 4000);
 }
 
@@ -1081,7 +1172,7 @@ function renderHostWalk() {
     const missing = people.length - hereCount;
     const startBtn = h('button', { class: 'btn btn-primary', type: 'button', disabled: hereCount < 2, text: `Start matching (${hereCount} here)` });
     actions.append(hereCount < 2 ? startBtn : confirmButton(startBtn,
-      missing ? `Tap again: match ${hereCount}, leave ${missing} not here` : `Tap again to match all ${hereCount}`,
+      missing ? `Tap again to match ${hereCount} (${missing} not here)` : `Tap again to match all ${hereCount}`,
       () => act('start', 'Matched. Everyone checked in can see their match.')));
   } else if (walk.status === 'matched') {
     actions.append(
@@ -1089,6 +1180,11 @@ function renderHostWalk() {
       confirmButton(h('button', { class: 'btn btn-ghost', type: 'button', text: 'Reshuffle' }), 'Tap again: everyone gets new matches', () => act('reshuffle', 'New matches sent')));
   }
   actions.append(h('button', { class: 'btn btn-ghost', type: 'button', onclick: downloadCsv, text: 'Download CSV' }));
+  const redo = h('div', { class: 'btnrow' });
+  if (walk.status !== 'open') redo.append(confirmButton(h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: '↺ Back to lobby' }),
+    'Tap again: clear matches', () => act('restart', 'Back to the lobby. Everyone\'s still checked in.')));
+  if (people.length) redo.append(confirmButton(h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Start over' }),
+    'Tap again: remove everyone', () => act('clear', 'Started over. Same code and QR.')));
 
   const plist = h('div', { class: 'plist' }, sorted.length ? sorted.map(p => {
       const mk = r => { const st = (p.progress.rounds[r] || {}).state || ''; return h('span', { class: 'mk ' + st, title: 'Match ' + r + ': ' + (st || 'not yet'), text: String(r) }); };
@@ -1123,7 +1219,7 @@ function renderHostWalk() {
       h('section', { class: 'panel' },
         h('div', { class: 'qhead' }, h('h3', { text: hereCount + ' here' }),
           h('span', { class: 'small', text: (people.length - hereCount) + ' signed up, not here' + (walk.status !== 'open' ? ' · ' + doneCount + ' finished' : '') })),
-        actions, plist),
+        actions, plist, redo.childElementCount ? redo : null),
       groupsEl)));
 }
 

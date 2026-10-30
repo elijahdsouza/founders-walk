@@ -16,20 +16,25 @@ read -r -p "Web address for the site [${OLD_DOMAIN:-$DEFAULT_DOMAIN}]: " DOMAIN
 DOMAIN="${DOMAIN:-${OLD_DOMAIN:-$DEFAULT_DOMAIN}}"
 printf 'FW_DOMAIN=%s\n' "$DOMAIN" > .env
 
-if [ ! -f config.php ]; then
+CHANGE_PIN=0
+if [ -f config.php ]; then
+  read -r -p "Change the host PIN? (y/N): " a; case "$a" in [yY]*) CHANGE_PIN=1 ;; esac
+fi
+if [ ! -f config.php ] || [ $CHANGE_PIN = 1 ]; then
+  SRC=config.sample.php; [ -f config.php ] && SRC=config.php
   PIN=""
   while [ ${#PIN} -lt 8 ]; do
     read -r -s -p "Choose a host PIN (8+ characters, only you know it): " PIN; echo
     [ ${#PIN} -ge 8 ] || echo "Needs at least 8 characters."
   done
-  PIN="$PIN" docker run --rm -e PIN -v "$PWD:/w" -w /w php:8.3-cli php -r '
-    $c = file_get_contents("config.sample.php");
+  PIN="$PIN" SRC="$SRC" FIRST="$([ "$SRC" = config.sample.php ] && echo 1 || echo 0)" docker run --rm -e PIN -e SRC -e FIRST -v "$PWD:/w" -w /w php:8.3-cli php -r '
+    $c = file_get_contents(getenv("SRC"));
     $set = function ($n, $v) use (&$c) { $c = preg_replace("/const $n\s*=\s*[^;]*;/", "const $n = " . var_export($v, true) . ";", $c, 1); };
     $set("FW_HOST_PIN", getenv("PIN"));
-    $set("FW_MAIL_MODE", "log");
+    if (getenv("FIRST") === "1") $set("FW_MAIL_MODE", "log");
     file_put_contents("config.php", $c);'
   chmod 644 config.php
-  echo "Settings saved. Summary emails are off for now; walks still work without them."
+  echo "Settings saved."
 fi
 
 mkdir -p data && chown -R 33:33 data && chmod 750 data
