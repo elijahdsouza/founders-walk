@@ -19,18 +19,22 @@ database file and PHP's built-in mail. No paid services.
 | `qrcode.min.js` | QR code library (MIT, see `qrcode.LICENSE.txt`) |
 | `.htaccess`, `data/.htaccess` | Block the settings and the database from the web |
 
-## Quick install on a Hostinger VPS
+## Quick install on a Hostinger Docker VPS (with Traefik)
 
-In hPanel, open your VPS and click **Browser terminal**, then paste:
+In hPanel, open the VPS, click **Web console**, log in as `root`, then paste:
 
 ```sh
-cd /root && curl -fsSL https://github.com/elijahdsouza/founders-walk/archive/refs/heads/main.tar.gz | tar xz && cd founders-walk-main && bash deploy/setup-vps.sh
+mkdir -p /root/founders-walk && cd /root/founders-walk && curl -fsSL https://github.com/elijahdsouza/founders-walk/archive/refs/heads/main.tar.gz | tar xz --strip-components=1 && bash deploy/docker-up.sh
 ```
 
-Answer its questions (web address, host PIN, email yes/no). If another site already
-uses the server's web ports, it stops without changing anything and shows what's there.
+Press Enter to accept the address (`walk.<server>.hstgr.cloud`), then choose a host PIN.
+It runs as its own Docker app next to your other apps, and Traefik gives it HTTPS.
+To update later, paste the same line again: walks and settings are kept.
 
-## Set up on a Hostinger VPS (about 20 minutes, once)
+Summary emails start switched off (`FW_MAIL_MODE` is `log`). Walks, matching and the
+CSV download all work without them.
+
+## Set up on a plain VPS without Docker (about 20 minutes, once)
 
 The host screen (`?host`) and the attendee screens are the same site and share one
 database, so whatever the host does shows up on everyone's phone within a few seconds.

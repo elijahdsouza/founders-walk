@@ -1,0 +1,20 @@
+# Founders Walk as a Docker app behind the server's existing Traefik (which gives it
+# HTTPS). Started by deploy/docker-up.sh, which writes FW_DOMAIN into ../.env.
+services:
+  founders-walk:
+    image: php:8.3-apache
+    container_name: founders-walk
+    restart: unless-stopped
+    volumes:
+      - ../index.html:/var/www/html/index.html:ro
+      - ../api.php:/var/www/html/api.php:ro
+      - ../qrcode.min.js:/var/www/html/qrcode.min.js:ro
+      - ../config.php:/var/www/html/config.php:ro
+      - ../data:/var/www/html/data
+      - ./apache-founders-walk.conf:/etc/apache2/conf-enabled/founders-walk.conf:ro
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.founderswalk.entrypoints=websecure
+      - traefik.http.routers.founderswalk.rule=Host(`${FW_DOMAIN}`)
+      - traefik.http.routers.founderswalk.tls.certresolver=letsencrypt
+      - traefik.http.services.founderswalk.loadbalancer.server.port=80
