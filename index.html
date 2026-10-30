@@ -466,6 +466,8 @@ function prettyDate(ymd) {
   if (isNaN(d)) return ymd;
   return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
 }
+// Role, business and one-liner, as one line under a person's name.
+function about(p) { return [p.role, p.business, p.oneliner].filter(Boolean).join(' · '); }
 function names(list) {
   const n = list.map(p => p.name);
   return n.length <= 1 ? (n[0] || '') : n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1];
@@ -504,7 +506,7 @@ const Demo = (() => {
     { name: 'Ben (example)', role: 'Founder', oneliner: 'Quoting software for tradies', link: 'https://www.linkedin.com/in/example' },
   ].map((p, i) => ({ ...p, id: i + 1, token: 'ex' + (i + 1), email: '', progress: { rounds: {}, done: false }, emailed: false, done: false, checkedIn: i < 4 }));
   let nextId = 50, autoStart = null;
-  const pub = p => ({ id: p.id, name: p.name, role: p.role, oneliner: p.oneliner, link: p.link });
+  const pub = p => ({ id: p.id, name: p.name, role: p.role, business: p.business || '', oneliner: p.oneliner, link: p.link });
   const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const groupUp = ids => { const g = []; for (let i = 0; i + 1 < ids.length; i += 2) g.push([ids[i], ids[i + 1]]); if (ids.length % 2) { g.length ? g[g.length - 1].push(ids[ids.length - 1]) : g.push([ids[ids.length - 1]]); } return g; };
   const keys = gs => { const s = new Set(); gs.forEach(g => g.forEach(a => g.forEach(b => { if (a < b) s.add(a + '-' + b); }))); return s; };
@@ -538,7 +540,7 @@ const Demo = (() => {
         case 'join': {
           if (!String(b.name || '').trim()) throw new Error('Add your name so your match can find you.');
           if (!b.consent) throw new Error('Tick the box so we can share your details with your matches.');
-          const me = { id: nextId++, token: 'me' + nextId, listed: !!b.listed, name: b.name.trim().slice(0, 40), role: b.role || '', oneliner: (b.oneliner || '').slice(0, 90), link: b.link ? (/^https?:/i.test(b.link) ? b.link : 'https://' + b.link) : '', email: b.email || '', progress: { rounds: {}, done: false }, emailed: false };
+          const me = { id: nextId++, token: 'me' + nextId, listed: !!b.listed, name: b.name.trim().slice(0, 60), role: b.role || '', business: (b.business || '').slice(0, 60), oneliner: (b.oneliner || '').slice(0, 90), link: b.link ? (/^https?:/i.test(b.link) ? b.link : 'https://' + b.link) : '', email: b.email || '', progress: { rounds: {}, done: false }, emailed: false };
           people.push(me);
           if (b.key) checkIn(me);
           if (walk.status === 'open' && me.checkedIn) { clearTimeout(autoStart); autoStart = setTimeout(start, 6000); }
@@ -714,13 +716,14 @@ function viewJoin(view) {
         err.textContent = ex.message; err.hidden = false; submit.disabled = false; submit.textContent = submitLabel;
       }
     } },
-    f('name', 'First name', { autocomplete: 'given-name', maxlength: '40', required: true, placeholder: 'What people call you' }),
-    f('oneliner', 'What are you building?', { maxlength: '90', placeholder: 'e.g. a booking app for physio clinics' }, '(one line)'),
+    f('name', 'Full name', { autocomplete: 'name', maxlength: '60', required: true, placeholder: 'e.g. Alex Nguyen' }),
+    f('business', 'Business name', { autocomplete: 'organization', maxlength: '60', placeholder: 'e.g. Physio Booker' }, '(optional)'),
+    f('oneliner', 'One line about what you do', { maxlength: '90', placeholder: 'e.g. a booking app for physio clinics' }),
     h('div', { class: 'field' }, h('span', { class: 'legend', id: 'roleLbl', text: 'You are mostly a' }), roleChips),
     f('link', 'LinkedIn or website', { type: 'url', inputmode: 'url', autocomplete: 'url', maxlength: '200', placeholder: 'linkedin.com/in/you' }, '(optional)'),
     f('email', 'Email for your summary', { type: 'email', inputmode: 'email', autocomplete: 'email', maxlength: '120', placeholder: 'you@company.com' }, S.key ? '(signed up already? use the same email and we\'ll find you)' : '(optional)'),
     h('label', { class: 'consent', for: 'consent' }, h('input', { type: 'checkbox', id: 'consent', name: 'consent' }),
-      h('span', { text: 'Share my name, role, one-liner and link with the people I\'m matched with. Your email stays private. We delete walk details after 30 days.' })),
+      h('span', { text: 'Share my name, business, role, one line and LinkedIn with the people I\'m matched with. Your email stays private. We delete walk details after 30 days.' })),
     h('label', { class: 'consent', for: 'listed' }, h('input', { type: 'checkbox', id: 'listed', name: 'listed' }),
       h('span', { text: 'Also add me to this walk\'s attendee list, so everyone who came can find me on LinkedIn. (Optional)' })),
     err);
@@ -738,7 +741,7 @@ function selfCard() {
   const me = S.me || {};
   return h('div', { class: 'person self' },
     h('div', { class: 'avatar', 'aria-hidden': 'true', text: initials(me.name || '') }),
-    h('div', {}, h('div', { class: 'name', text: me.name }), h('div', { class: 'meta', text: [me.role, me.oneliner].filter(Boolean).join(' · ') || 'Your match will see this.' })));
+    h('div', {}, h('div', { class: 'name', text: me.name }), h('div', { class: 'meta', text: about(me) || 'Your match will see this.' })));
 }
 
 function viewSignedUp(view) {
@@ -801,7 +804,7 @@ function personRow(p) {
     h('div', { class: 'avatar', 'aria-hidden': 'true', text: initials(p.name) }),
     h('div', { style: 'min-width:0' },
       h('div', { class: 'name', text: p.name }),
-      h('div', { class: 'meta', text: [p.role, p.oneliner].filter(Boolean).join(' · ') })),
+      h('div', { class: 'meta', text: about(p) })),
     p.link ? h('a', { class: 'link', href: p.link, target: '_blank', rel: 'noopener noreferrer', text: linkLabel(p.link) + ' ↗' }) : null);
 }
 
@@ -882,14 +885,14 @@ function viewDone(view) {
       h('div', { class: 'top-line' },
         h('span', { class: 'who', text: m && m.people.length ? names(m.people) : 'No match' }),
         h('span', { class: 'state ' + (st === 'met' ? 'state-met' : st === 'skipped' ? 'state-skipped' : 'state-open'), text: st === 'met' ? 'Met' : st === 'skipped' ? 'Skipped' : 'Not yet' })),
-      m ? m.people.map(p => h('div', { class: 'meta' }, [m.people.length > 1 ? p.name : '', p.role, p.oneliner].filter(Boolean).join(' · '),
+      m ? m.people.map(p => h('div', { class: 'meta' }, [m.people.length > 1 ? p.name : '', about(p)].filter(Boolean).join(' · '),
         p.link ? h('div', {}, h('a', { href: p.link, target: '_blank', rel: 'noopener noreferrer', text: linkLabel(p.link) + ' ↗' })) : null)) : null,
       st !== 'met' && !ended ? h('button', { class: 'btn btn-quiet btn-sm', type: 'button', style: 'justify-self:start;padding-left:0', onclick: () => { S.step = s.key; render(); } }, 'Go back to match ' + s.round) : null);
   });
 
   const me = S.me || {};
   const others = S.attendees || [];
-  const personLine = p => [p.name, p.role, p.oneliner].filter(Boolean).join(' · ');
+  const personLine = p => [p.name, about(p)].filter(Boolean).join(' · ');
 
   // Everyone who opted in to the attendee list (and checked in), with their links.
   const listToggle = h('label', { class: 'consent', for: 'listMe' },
@@ -910,11 +913,13 @@ function viewDone(view) {
 
   // The summary as plain text: for the email and the copy button.
   const summaryText = () => {
-    const lines = [`${S.walk.title} · ${prettyDate(S.walk.date)}`, '', 'Who I walked with:'];
-    S.matches.forEach(m => m.people.forEach(p => { lines.push('- ' + personLine(p)); if (p.link) lines.push('  ' + p.link); }));
-    const listed = others.filter(p => p.link);
-    if (listed.length) { lines.push('', 'Everyone who shared their link:'); listed.forEach(p => { lines.push('- ' + personLine(p)); lines.push('  ' + p.link); }); }
-    lines.push('', 'Thanks for choosing Founders Walk.');
+    const block = p => [personLine(p), 'LinkedIn: ' + (p.link || 'not added'), ''];
+    const lines = [`${S.walk.title} · ${prettyDate(S.walk.date)}`, '', 'WHO I WALKED WITH', ''];
+    const seen = new Set();
+    S.matches.forEach(m => m.people.forEach(p => { seen.add(p.id); lines.push(...block(p)); }));
+    const rest = others.filter(p => !seen.has(p.id));
+    if (rest.length) { lines.push('EVERYONE ELSE AT THE WALK', ''); rest.forEach(p => lines.push(...block(p))); }
+    lines.push('Thanks for choosing Founders Walk.');
     return lines.join('\n');
   };
 
@@ -942,15 +947,13 @@ function viewDone(view) {
   } else {
     // No mail server needed: open the person's own email app with the summary filled in.
     const input = h('input', { class: 'input', id: 'doneEmail', type: 'email', inputmode: 'email', autocomplete: 'email', placeholder: 'you@company.com', value: me.email || '' });
-    const go = h('button', { class: 'btn btn-primary btn-sm', type: 'submit', text: 'Email me' });
+    const mailto = () => 'mailto:' + encodeURIComponent(input.value.trim()) + '?subject=' + encodeURIComponent('My Founders Walk matches, ' + prettyDate(S.walk.date)) + '&body=' + encodeURIComponent(summaryText());
+    const go = h('a', { class: 'btn btn-primary btn-sm', id: 'mailMe', href: mailto(), text: 'Email me' });
+    input.addEventListener('input', () => { go.href = mailto(); });
     const copy = h('button', { class: 'btn btn-quiet btn-sm', type: 'button', style: 'justify-self:start;padding-left:0', onclick: async () => {
         try { await navigator.clipboard.writeText(summaryText()); toast('Copied. Paste it into your notes.'); } catch { toast('Couldn\'t copy on this phone. Use Email me instead.'); }
       } }, 'Copy the list instead');
-    mail = h('form', { class: 'mailbox', onsubmit: e => {
-        e.preventDefault();
-        const to = input.value.trim();
-        location.href = 'mailto:' + encodeURIComponent(to) + '?subject=' + encodeURIComponent('My Founders Walk matches, ' + prettyDate(S.walk.date)) + '&body=' + encodeURIComponent(summaryText());
-      } },
+    mail = h('form', { class: 'mailbox', onsubmit: e => { e.preventDefault(); location.href = mailto(); } },
       h('p', { text: 'Want this list in your inbox? Tap Email me: your email app opens with it filled in, then tap Send.' }),
       h('div', { class: 'row' }, input, go), copy);
   }
@@ -1204,7 +1207,7 @@ function renderHostWalk() {
           confirmButton(h('button', { class: 'x', type: 'button', 'aria-label': 'Remove ' + p.name, text: 'Remove' }), 'Sure?', async () => {
             try { await api('remove', { host: true, body: { code: walk.code, id: p.id } }); H.sig = ''; hostWalk(walk.code); } catch (ex) { toast(ex.message); }
           })),
-        h('span', { class: 'sub', text: [p.checkedIn ? 'Here' : 'Signed up, not here yet', p.role, p.oneliner, p.email ? '✉ email' : 'no email'].filter(Boolean).join(' · ') }));
+        h('span', { class: 'sub', text: [p.checkedIn ? 'Here' : 'Signed up, not here yet', about(p), p.email ? '✉ email' : 'no email'].filter(Boolean).join(' · ') }));
     }) : h('p', { class: 'small', text: 'Nobody yet. Share the sign-up link before the walk, or show the QR code on the day.' }));
 
   const groupsEl = walk.status === 'open' ? null : h('section', { class: 'panel' }, h('h3', { text: 'Matches' }),

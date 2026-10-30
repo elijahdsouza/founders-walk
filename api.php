@@ -75,6 +75,7 @@ function db(): PDO
     if (!in_array('checkin_key', $cols('walks'), true)) $pdo->exec("ALTER TABLE walks ADD COLUMN checkin_key TEXT NOT NULL DEFAULT ''");
     if (!in_array('checked_in_at', $cols('people'), true)) $pdo->exec('ALTER TABLE people ADD COLUMN checked_in_at INTEGER');
     if (!in_array('gen', $cols('walks'), true)) $pdo->exec('ALTER TABLE walks ADD COLUMN gen INTEGER NOT NULL DEFAULT 0');
+    if (!in_array('business', $cols('people'), true)) $pdo->exec("ALTER TABLE people ADD COLUMN business TEXT NOT NULL DEFAULT ''");
     if (!in_array('listed', $cols('people'), true)) $pdo->exec('ALTER TABLE people ADD COLUMN listed INTEGER NOT NULL DEFAULT 0');
     return $pdo;
 }
@@ -209,7 +210,7 @@ function walkInfo(array $w): array
 
 function publicPerson(array $p): array
 {
-    return ['id' => (int)$p['id'], 'name' => $p['name'], 'role' => $p['role'], 'oneliner' => $p['oneliner'], 'link' => $p['link']];
+    return ['id' => (int)$p['id'], 'name' => $p['name'], 'role' => $p['role'], 'business' => $p['business'] ?? '', 'oneliner' => $p['oneliner'], 'link' => $p['link']];
 }
 
 function peopleById(int $walkId): array
@@ -455,10 +456,11 @@ function sendSummary(array $walk, array $person, array $byId): bool
         foreach ($m['people'] as $p) {
             $rows .= '<p style="margin:10px 0 0;font-size:16px"><strong style="font-family:Georgia,serif;font-size:19px">' . e($p['name']) . '</strong>'
                 . ($p['role'] ? ' <span style="color:#57534a">· ' . e($p['role']) . '</span>' : '')
+                . ($p['business'] ? ' <span style="color:#57534a">· ' . e($p['business']) . '</span>' : '')
                 . ($p['oneliner'] ? '<br><span style="color:#34301f">' . e($p['oneliner']) . '</span>' : '')
                 . ($p['link'] ? '<br><a href="' . e($p['link']) . '" style="color:#3b48a8">' . e(preg_replace('~^https?://(www\.)?~i', '', $p['link'])) . '</a>' : '')
                 . '</p>';
-            $text .= "- {$p['name']}" . ($p['role'] ? " ({$p['role']})" : '') . ($p['oneliner'] ? ": {$p['oneliner']}" : '') . ($p['link'] ? "\n  {$p['link']}" : '') . "\n";
+            $text .= "- {$p['name']}" . ($p['role'] ? " ({$p['role']})" : '') . ($p['business'] ? ", {$p['business']}" : '') . ($p['oneliner'] ? ": {$p['oneliner']}" : '') . ($p['link'] ? "\n  LinkedIn: {$p['link']}" : '') . "\n";
         }
         $cards = $progress['rounds'][$r]['cards'] ?? [];
         if ($cards) {
@@ -502,11 +504,11 @@ function sendRollup(array $walk, array $byId): bool
             $bits[] = 'Match ' . $m['round'] . ': ' . implode(' & ', array_column($m['people'], 'name')) . " ($mark)";
         }
         $rows .= '<tr><td style="padding:8px 6px;border-top:1px solid #e6e2d9;vertical-align:top"><strong>' . e($p['name']) . '</strong><br><span style="color:#57534a">' . e($p['role']) . '</span></td>'
-            . '<td style="padding:8px 6px;border-top:1px solid #e6e2d9;vertical-align:top">' . e($p['oneliner'])
+            . '<td style="padding:8px 6px;border-top:1px solid #e6e2d9;vertical-align:top">' . e(trim($p['business'] . ' · ' . $p['oneliner'], ' ·'))
             . ($p['link'] ? '<br><a href="' . e($p['link']) . '" style="color:#3b48a8">' . e($p['link']) . '</a>' : '')
             . ($p['email'] ? '<br>' . e($p['email']) : '') . '</td>'
             . '<td style="padding:8px 6px;border-top:1px solid #e6e2d9;vertical-align:top;color:#34301f">' . e(implode("\n", $bits)) . '</td></tr>';
-        $text .= "{$p['name']} ({$p['role']}) {$p['oneliner']} {$p['link']} {$p['email']}\n  " . implode("\n  ", $bits) . "\n";
+        $text .= "{$p['name']} ({$p['role']}) {$p['business']} {$p['oneliner']} {$p['link']} {$p['email']}\n  " . implode("\n  ", $bits) . "\n";
     }
     $html = emailShell(
         '<h1 style="font-family:Georgia,serif;font-weight:500;font-size:26px;margin:10px 0 6px">' . e($walk['title']) . ' roll-up</h1>'
@@ -533,21 +535,21 @@ try {
             if (!$isPost) fail('Use POST.', 405);
             $w = walkByCode(param('code'));
             if ($w['status'] === 'ended') fail('This walk has finished. See you at the next one.', 409);
-            $name = clean(param('name'), 40);
+            $name = clean(param('name'), 60);
             if ($name === '') fail('Add your name so your match can find you.');
             if (empty(input()['consent'])) fail('Tick the box so we can share your details with your matches.');
             $role = in_array(param('role'), ROLES, true) ? param('role') : '';
             $email = param('email') === '' ? '' : cleanEmail(param('email'));
             if (param('email') !== '' && $email === '') fail('That email doesn\'t look right. Check it, or leave it blank.');
-            $details = [$name, clean(param('oneliner'), 90), $role, cleanLink(param('link')), empty(input()['listed']) ? 0 : 1];
+            $details = [$name, clean(param('business'), 60), clean(param('oneliner'), 90), $role, cleanLink(param('link')), empty(input()['listed']) ? 0 : 1];
             // Signed up before on another phone or browser? Pick up that sign-up instead of making a second one.
             $existing = $email === '' ? null
                 : q('SELECT * FROM people WHERE walk_id = ? AND lower(email) = lower(?)', [$w['id'], $email])->fetch();
             if ($existing) {
-                q('UPDATE people SET name = ?, oneliner = ?, role = ?, link = ?, listed = ? WHERE id = ?', [...$details, $existing['id']]);
+                q('UPDATE people SET name = ?, business = ?, oneliner = ?, role = ?, link = ?, listed = ? WHERE id = ?', [...$details, $existing['id']]);
                 $person = $existing;
             } else {
-                q('INSERT INTO people (walk_id, token, name, oneliner, role, link, listed, email, joined_at) VALUES (?,?,?,?,?,?,?,?,?)',
+                q('INSERT INTO people (walk_id, token, name, business, oneliner, role, link, listed, email, joined_at) VALUES (?,?,?,?,?,?,?,?,?,?)',
                     [$w['id'], bin2hex(random_bytes(16)), ...$details, $email, time()]);
                 $person = q('SELECT * FROM people WHERE id = ?', [db()->lastInsertId()])->fetch();
             }
@@ -735,7 +737,7 @@ try {
             header('Content-Type: text/csv; charset=utf-8');
             header('Content-Disposition: attachment; filename="founders-walk-' . $w['walk_date'] . '.csv"');
             $f = fopen('php://output', 'w');
-            fputcsv($f, ['Name', 'Role', 'Building', 'Link', 'Email', 'Match 1', 'Match 1 status', 'Match 2', 'Match 2 status', 'Checked in', 'Done'], ',', '"', '');
+            fputcsv($f, ['Name', 'Role', 'Business', 'One line', 'LinkedIn', 'Email', 'Match 1', 'Match 1 status', 'Match 2', 'Match 2 status', 'Checked in', 'Done'], ',', '"', '');
             foreach ($byId as $id => $p) {
                 $progress = cleanProgress(json_decode($p['progress'], true));
                 $cols = [];
@@ -746,7 +748,7 @@ try {
                 }
                 // Neutralise spreadsheet formulas in user-entered cells.
                 $row = array_map(fn($v) => preg_match('/^[=+\-@]/', (string)$v) ? "'" . $v : $v,
-                    [$p['name'], $p['role'], $p['oneliner'], $p['link'], $p['email'], ...$cols, $p['checked_in_at'] ? 'yes' : 'no', $p['done_at'] ? 'yes' : 'no']);
+                    [$p['name'], $p['role'], $p['business'], $p['oneliner'], $p['link'], $p['email'], ...$cols, $p['checked_in_at'] ? 'yes' : 'no', $p['done_at'] ? 'yes' : 'no']);
                 fputcsv($f, $row, ',', '"', '');
             }
             exit;
