@@ -10,14 +10,17 @@ cd "$(dirname "$0")/.."
 command -v docker >/dev/null || { echo "Docker isn't installed on this server."; exit 1; }
 docker ps --format '{{.Image}}' | grep -q '^traefik' || { echo "Traefik isn't running on this server, so this script can't give the site an address. Send this message to Claude."; exit 1; }
 
+# --update: no questions, keep the address and PIN (used by the fw-update command).
+UPDATE=0; [ "${1:-}" = "--update" ] && UPDATE=1
 DEFAULT_DOMAIN="walk.$(hostname -s).hstgr.cloud"
 OLD_DOMAIN="$(sed -n 's/^FW_DOMAIN=//p' .env 2>/dev/null || true)"
-read -r -p "Web address for the site [${OLD_DOMAIN:-$DEFAULT_DOMAIN}]: " DOMAIN
+DOMAIN=""
+[ $UPDATE = 1 ] && [ -f config.php ] || read -r -p "Web address for the site [${OLD_DOMAIN:-$DEFAULT_DOMAIN}]: " DOMAIN
 DOMAIN="${DOMAIN:-${OLD_DOMAIN:-$DEFAULT_DOMAIN}}"
 printf 'FW_DOMAIN=%s\n' "$DOMAIN" > .env
 
 CHANGE_PIN=0
-if [ -f config.php ]; then
+if [ -f config.php ] && [ $UPDATE = 0 ]; then
   read -r -p "Change the host PIN? (y/N): " a; case "$a" in [yY]*) CHANGE_PIN=1 ;; esac
 fi
 if [ ! -f config.php ] || [ $CHANGE_PIN = 1 ]; then
