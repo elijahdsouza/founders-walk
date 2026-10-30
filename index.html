@@ -1146,6 +1146,18 @@ function renderHostWalk() {
   const hereCount = people.filter(p => p.checkedIn).length;
   const sorted = [...people.filter(p => p.checkedIn), ...people.filter(p => !p.checkedIn)];
 
+  // The QR code's own link: opening it checks people in, straight into the lobby.
+  // Share it in the group chat for anyone who can't scan; it works from anywhere, so share it only on the day.
+  const shareCheckin = async () => {
+    const text = 'Check in to ' + walk.title + ' and join the lobby:';
+    if (navigator.share) { try { await navigator.share({ title: walk.title, text, url: checkinUrl.toString() }); return; } catch (ex) { if (ex.name === 'AbortError') return; } }
+    try { await navigator.clipboard.writeText(checkinUrl.toString()); toast('Check-in link copied'); } catch { toast('Copy failed. Press and hold the link to copy it.'); }
+  };
+  const checkinShare = h('div', { class: 'btnrow', style: 'justify-content:center' },
+    h('button', { class: 'btn btn-primary btn-sm', type: 'button', onclick: shareCheckin }, navigator.share ? 'Share check-in link' : 'Copy check-in link'),
+    navigator.share ? h('button', { class: 'btn btn-ghost btn-sm', type: 'button', onclick: async () => {
+        try { await navigator.clipboard.writeText(checkinUrl.toString()); toast('Check-in link copied'); } catch { toast('Copy failed.'); }
+      } }, 'Copy') : null);
   const copy = h('button', { class: 'btn btn-ghost btn-sm', type: 'button', onclick: async () => {
       try { await navigator.clipboard.writeText(joinUrl.toString()); toast('Sign-up link copied'); } catch { toast('Copy failed. Press and hold the link to copy it.'); }
     } }, 'Copy sign-up link');
@@ -1198,8 +1210,8 @@ function renderHostWalk() {
       h('div', { class: 'qhead' }, h('h3', { text: walk.title }), h('span', { class: 'pill pill-' + walk.status, text: walk.status })),
       h('p', { class: 'small', text: (walk.place ? walk.place + ' · ' : '') + prettyDate(walk.date) }),
       h('span', { class: 'eyebrow', style: 'text-align:center', text: 'On the day: scan to check in' }),
-      qr, h('div', { class: 'code', text: walk.code }),
-      h('p', { class: 'small', style: 'text-align:center', text: 'Can\'t scan? They type this code on the site to sign up, then tap Check in next to their name.' }),
+      qr, h('div', { class: 'code', text: walk.code }), checkinShare,
+      h('p', { class: 'small', style: 'text-align:center', text: 'Can\'t scan? Share the check-in link: it puts them straight in the lobby. Send it on the day only, as it works from anywhere.' }),
       h('span', { class: 'eyebrow', style: 'text-align:center;margin-top:6px', text: 'Before the walk: share to sign up' }),
       h('div', { class: 'urlbox', text: joinUrl.toString() }), copy,
       h('button', { class: 'btn btn-quiet btn-sm', type: 'button', onclick: () => { H.code = ''; clearTimeout(H.timer); history.replaceState(null, '', '?host'); hostHome(); } }, '← All walks')),
