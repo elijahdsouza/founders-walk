@@ -580,13 +580,15 @@ const Demo = (() => {
   const lc = t => /^\p{Lu}\p{Ll}/u.test(t) ? t[0].toLowerCase() + t.slice(1) : t;
   function why(me, o) {
     const first = o.name.split(' ')[0], out = [];
+    if (me.business && me.business.toLowerCase() === (o.business || '').toLowerCase()) out.push('You\'re both from ' + o.business + ': everyone else was already paired');
     inter(me.talk, o.help).forEach(t => out.push(first + ' can help with ' + lc(t)));
     inter(o.talk, me.help).forEach(t => out.push('You can help ' + first + ' with ' + lc(t)));
     inter(me.talk, o.talk).forEach(t => out.push('You both want to talk about ' + lc(t)));
     if (me.space && me.space !== 'Other' && me.space === o.space) out.push('You\'re both in ' + lc(me.space));
     const sa = STAGE_N.indexOf(me.stage), sb = STAGE_N.indexOf(o.stage);
     if (sa >= 0 && sb >= 0) { if (sb === sa) out.push('You\'re both at the ' + lc(me.stage) + ' stage'); else if (sb - sa === 1) out.push(first + ' is a step ahead of you'); else if (sa - sb === 1) out.push('You\'re a step ahead of ' + first); }
-    const shared = inter(wordsOf(me), wordsOf(o)).slice(0, 2);
+    const bizWords = me.business && me.business.toLowerCase() === (o.business || '').toLowerCase() ? wordsOf({ business: o.business }) : [];
+    const shared = inter(wordsOf(me), wordsOf(o)).filter(w => !bizWords.includes(w)).slice(0, 2);
     if (shared.length) out.push('You both mention “' + shared.join('” and “') + '”');
     return (out.length ? out : ['Someone outside your usual circle']).slice(0, 3);
   }
@@ -631,7 +633,7 @@ const Demo = (() => {
     const r = why(a, b)[0];
     return r.replace(/^You both want/, 'Both want').replace(/^You're both/, 'Both').replace(/^You both/, 'Both').replace(/^You can help /, fa + ' can help ')
       .replace(/^You're a step ahead of .*/, fa + ' is a step ahead').replace(new RegExp('^' + fb + ' is a step ahead of you'), fb + ' is a step ahead')
-      .replace(new RegExp('^' + fb + ' can help with '), fb + ' can help ' + fa + ' with ').replace('Someone outside your usual circle', 'New faces');
+      .replace(new RegExp('^' + fb + ' can help with '), fb + ' can help ' + fa + ' with ').replace('Someone outside your usual circle', 'New faces').replace(/^You're both from .*/, 'Same business: nobody else was free');
   }));
   const here = () => people.filter(p => p.checkedIn);
   const counts = () => ({ count: here().length, signedUp: people.length });

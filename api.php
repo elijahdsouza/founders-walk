@@ -309,7 +309,8 @@ function pairKeys(array $groups): array
 // Each pair gets a score from what people told us when they joined: one wants to talk about
 // what the other can help with, shared topics, the same space, being at the same stage or a
 // step ahead, a different role, and words they both used in their headline or one-liner.
-// A little randomness keeps reshuffles fresh. Two people from the same business never pair.
+// A little randomness keeps reshuffles fresh. Two people from the same business score far below
+// everyone else, so they pair only when nobody else is free. Everyone checked in is always matched.
 
 const STOPWORDS = ['and', 'the', 'for', 'with', 'from', 'that', 'this', 'your', 'our', 'their', 'into', 'about', 'helping', 'help', 'building', 'build', 'founder', 'cofounder', 'co-founder', 'ceo', 'director', 'owner', 'manager', 'head', 'lead', 'business', 'company', 'people', 'team', 'work', 'working', 'based', 'melbourne', 'australia', 'startup', 'startups', 'small', 'make', 'making', 'more', 'than', 'who', 'what', 'are', 'you', 'all'];
 
@@ -359,6 +360,8 @@ function whyMatched(array $me, array $other): array
     // Lower-case the first letter only, so "AI & tools" stays as it is.
     $lc = fn($t) => preg_match('/^\p{Lu}\p{Ll}/u', $t) ? mb_strtolower(mb_substr($t, 0, 1)) . mb_substr($t, 1) : $t;
     $why = [];
+    // Colleagues only end up together when nobody else was free: say so.
+    if ($a['biz'] !== '' && $a['biz'] === $b['biz']) $why[] = 'You\'re both from ' . trim($other['business']) . ': everyone else was already paired';
     foreach (array_intersect($a['talk'], $b['help']) as $t) $why[] = "$first can help with " . $lc($t);
     foreach (array_intersect($b['talk'], $a['help']) as $t) $why[] = "You can help $first with " . $lc($t);
     foreach (array_intersect($a['talk'], $b['talk']) as $t) $why[] = 'You both want to talk about ' . $lc($t);
@@ -369,7 +372,9 @@ function whyMatched(array $me, array $other): array
         elseif ($d === 1) $why[] = "$first is a step ahead of you";
         elseif ($d === -1) $why[] = "You're a step ahead of $first";
     }
-    $shared = array_slice(array_values(array_intersect($a['words'], $b['words'])), 0, 2);
+    // Words from the business name don't count as common ground between colleagues.
+    $bizWords = $a['biz'] !== '' && $a['biz'] === $b['biz'] ? words(['business' => $other['business']]) : [];
+    $shared = array_slice(array_values(array_diff(array_intersect($a['words'], $b['words']), $bizWords)), 0, 2);
     if ($shared) $why[] = 'You both mention “' . implode('” and “', $shared) . '”';
     if (!$why) $why[] = 'Someone outside your usual circle';
     return array_slice($why, 0, 3);
@@ -380,6 +385,7 @@ function whyPair(array $x, array $y): string
 {
     $a = personFacts($x); $b = personFacts($y);
     $fa = explode(' ', trim($x['name']))[0] ?: '?'; $fb = explode(' ', trim($y['name']))[0] ?: '?';
+    if ($a['biz'] !== '' && $a['biz'] === $b['biz']) return 'Same business: nobody else was free';
     $lc = fn($t) => preg_match('/^\p{Lu}\p{Ll}/u', $t) ? mb_strtolower(mb_substr($t, 0, 1)) . mb_substr($t, 1) : $t;
     if ($t = array_values(array_intersect($a['talk'], $b['help']))) return "$fb can help $fa with " . $lc($t[0]);
     if ($t = array_values(array_intersect($b['talk'], $a['help']))) return "$fa can help $fb with " . $lc($t[0]);

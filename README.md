@@ -127,8 +127,10 @@ can check in from home. Don't post a photo of the QR code publicly.
   wants to talk about what the other can help with (strongest), shared topics, the
   same space, the same stage or a step ahead, different roles, and words both used
   in their headline, one-liner or business name. The site then finds the split with
-  the highest total score. A little randomness keeps reshuffles fresh, and two
-  people from the same business are never paired.
+  the highest total score. A little randomness keeps reshuffles fresh.
+- Everyone checked in is always matched. Two people from the same business score
+  far below everyone else, so they're paired only when nobody else is free (for
+  example, the last two people left), and their card says so.
 - Each match card shows up to three reasons ("Ben can help with fundraising").
   The host's list of matches shows one reason per group. Nobody filled anything
   in? They're still paired, as "someone outside your usual circle".
