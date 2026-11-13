@@ -121,6 +121,19 @@ can check in from home. Don't post a photo of the QR code publicly.
 - Only people who are checked in are matched. Two rounds are drawn when you tap
   Start (one round if fewer than 4 people).
 - Pairs; an odd number makes one group of three.
+- Pairs are chosen, not random. When people join they can tap their space, their
+  stage, up to three things they'd like to talk about and up to three they can help
+  with, and paste their LinkedIn headline. Each possible pair gets a score: one
+  wants to talk about what the other can help with (strongest), shared topics, the
+  same space, the same stage or a step ahead, different roles, and words both used
+  in their headline, one-liner or business name. The site then finds the split with
+  the highest total score. A little randomness keeps reshuffles fresh, and two
+  people from the same business are never paired.
+- Each match card shows up to three reasons ("Ben can help with fundraising").
+  The host's list of matches shows one reason per group. Nobody filled anything
+  in? They're still paired, as "someone outside your usual circle".
+- The site doesn't read LinkedIn profiles itself. LinkedIn blocks automated reading,
+  and its sign-in only shares name, photo and email. So the headline is pasted.
 - Round 2 avoids repeating anyone from round 1 wherever the numbers allow.
 - **Reshuffle** redraws both rounds for everyone who hasn't been emailed yet.
 - The questions are the same for everyone in a round, so both people in a pair see

@@ -17,6 +17,10 @@ header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: same-origin');
 
 const ROLES = ['Founder', 'Operator', 'Investor', 'Creator', 'Other'];
+// What people tap on the join form, so matching can pair people who'll click.
+const SPACES = ['Tech & software', 'Impact & social enterprise', 'Food & hospitality', 'Retail & consumer', 'Health & wellbeing', 'Creative & media', 'Services & consulting', 'Property & trades', 'Finance & investing', 'Education', 'Other'];
+const STAGES = ['Idea', 'Early', 'Growing', 'Established'];
+const TOPICS = ['Getting customers', 'Marketing & brand', 'Fundraising', 'Hiring & team', 'Product', 'AI & tools', 'Partnerships', 'Money & pricing', 'Systems & ops', 'Wellbeing & balance'];
 
 // ---------- helpers ----------
 
@@ -77,6 +81,13 @@ function db(): PDO
     if (!in_array('gen', $cols('walks'), true)) $pdo->exec('ALTER TABLE walks ADD COLUMN gen INTEGER NOT NULL DEFAULT 0');
     if (!in_array('business', $cols('people'), true)) $pdo->exec("ALTER TABLE people ADD COLUMN business TEXT NOT NULL DEFAULT ''");
     if (!in_array('listed', $cols('people'), true)) $pdo->exec('ALTER TABLE people ADD COLUMN listed INTEGER NOT NULL DEFAULT 0');
+    // Added for interest-based matching.
+    foreach (['headline', 'space', 'stage'] as $c) {
+        if (!in_array($c, $cols('people'), true)) $pdo->exec("ALTER TABLE people ADD COLUMN $c TEXT NOT NULL DEFAULT ''");
+    }
+    foreach (['talk', 'help'] as $c) {
+        if (!in_array($c, $cols('people'), true)) $pdo->exec("ALTER TABLE people ADD COLUMN $c TEXT NOT NULL DEFAULT '[]'");
+    }
     return $pdo;
 }
 
@@ -118,6 +129,24 @@ function cleanLink(string $s): string
     $parts = parse_url($s);
     if (!$parts || empty($parts['host']) || !str_contains($parts['host'], '.')) return '';
     return filter_var($s, FILTER_VALIDATE_URL) ? $s : '';
+}
+
+/** Up to $max picks, each from the allowed list. Accepts an array or a comma-separated string. */
+function cleanPicks($v, array $allowed, int $max = 3): array
+{
+    if (is_string($v)) $v = explode(',', $v);
+    if (!is_array($v)) return [];
+    $out = [];
+    foreach ($v as $x) {
+        if (is_string($x) && in_array($x, $allowed, true) && !in_array($x, $out, true)) $out[] = $x;
+    }
+    return array_slice($out, 0, $max);
+}
+
+function picks(array $p, string $col): array
+{
+    $v = json_decode($p[$col] ?? '[]', true);
+    return is_array($v) ? array_values(array_filter($v, 'is_string')) : [];
 }
 
 function cleanEmail(string $s): string
@@ -210,7 +239,8 @@ function walkInfo(array $w): array
 
 function publicPerson(array $p): array
 {
-    return ['id' => (int)$p['id'], 'name' => $p['name'], 'role' => $p['role'], 'business' => $p['business'] ?? '', 'oneliner' => $p['oneliner'], 'link' => $p['link']];
+    return ['id' => (int)$p['id'], 'name' => $p['name'], 'role' => $p['role'], 'business' => $p['business'] ?? '', 'oneliner' => $p['oneliner'], 'link' => $p['link'],
+        'headline' => $p['headline'] ?? '', 'space' => $p['space'] ?? '', 'stage' => $p['stage'] ?? '', 'talk' => picks($p, 'talk'), 'help' => picks($p, 'help')];
 }
 
 function peopleById(int $walkId): array
@@ -236,7 +266,9 @@ function matchesFor(array $walk, int $personId, array $byId): array
             if (!in_array($personId, $g, true)) continue;
             $others = [];
             foreach ($g as $id) {
-                if ($id !== $personId && isset($byId[$id])) $others[] = publicPerson($byId[$id]);
+                if ($id !== $personId && isset($byId[$id])) {
+                    $others[] = publicPerson($byId[$id]) + ['why' => isset($byId[$personId]) ? whyMatched($byId[$personId], $byId[$id]) : []];
+                }
             }
             $out[] = ['round' => $i + 1, 'people' => $others];
         }
@@ -264,19 +296,6 @@ function shuffled(array $a): array
     return $a;
 }
 
-/** Pairs in order; an odd one out joins the last pair as a three. */
-function groupUp(array $ids): array
-{
-    $groups = [];
-    $n = count($ids);
-    for ($i = 0; $i + 1 < $n; $i += 2) $groups[] = [$ids[$i], $ids[$i + 1]];
-    if ($n % 2 === 1) {
-        if ($groups) $groups[count($groups) - 1][] = $ids[$n - 1];
-        else $groups[] = [$ids[$n - 1]];
-    }
-    return $groups;
-}
-
 function pairKeys(array $groups): array
 {
     $keys = [];
@@ -286,44 +305,197 @@ function pairKeys(array $groups): array
     return $keys;
 }
 
-/** Round 1, then (with 4+ people) a round 2 that repeats as few pairs as possible. */
-function makeRounds(array $ids): array
+// ---------- who clicks with whom ----------
+// Each pair gets a score from what people told us when they joined: one wants to talk about
+// what the other can help with, shared topics, the same space, being at the same stage or a
+// step ahead, a different role, and words they both used in their headline or one-liner.
+// A little randomness keeps reshuffles fresh. Two people from the same business never pair.
+
+const STOPWORDS = ['and', 'the', 'for', 'with', 'from', 'that', 'this', 'your', 'our', 'their', 'into', 'about', 'helping', 'help', 'building', 'build', 'founder', 'cofounder', 'co-founder', 'ceo', 'director', 'owner', 'manager', 'head', 'lead', 'business', 'company', 'people', 'team', 'work', 'working', 'based', 'melbourne', 'australia', 'startup', 'startups', 'small', 'make', 'making', 'more', 'than', 'who', 'what', 'are', 'you', 'all'];
+
+/** Meaningful words from someone's headline, one-liner and business name. */
+function words(array $p): array
+{
+    $text = mb_strtolower(implode(' ', [$p['headline'] ?? '', $p['oneliner'] ?? '', $p['business'] ?? '']));
+    preg_match_all('/[\p{L}\p{N}][\p{L}\p{N}&+-]{2,}/u', $text, $m);
+    $out = [];
+    foreach ($m[0] as $w) {
+        if (in_array($w, STOPWORDS, true)) continue;
+        if (mb_strlen($w) > 4 && str_ends_with($w, 's')) $w = mb_substr($w, 0, -1);
+        if (mb_strlen($w) >= 3) $out[$w] = true;
+    }
+    return array_keys($out);
+}
+
+function personFacts(array $p): array
+{
+    return [
+        'talk' => picks($p, 'talk'), 'help' => picks($p, 'help'),
+        'space' => $p['space'] ?? '', 'stage' => array_search($p['stage'] ?? '', STAGES, true),
+        'role' => $p['role'] ?? '', 'biz' => mb_strtolower(trim($p['business'] ?? '')), 'words' => words($p),
+    ];
+}
+
+function pairScore(array $a, array $b): float
+{
+    if ($a['biz'] !== '' && $a['biz'] === $b['biz']) return -20.0;
+    $s = 3.0 * (count(array_intersect($a['talk'], $b['help'])) + count(array_intersect($b['talk'], $a['help'])));
+    $s += 1.5 * count(array_intersect($a['talk'], $b['talk']));
+    if ($a['space'] !== '' && $a['space'] !== 'Other' && $a['space'] === $b['space']) $s += 1.5;
+    if ($a['stage'] !== false && $b['stage'] !== false) {
+        $d = abs($a['stage'] - $b['stage']);
+        $s += $d === 0 ? 1.0 : ($d === 1 ? 1.5 : 0.0);
+    }
+    if ($a['role'] !== '' && $b['role'] !== '' && $a['role'] !== $b['role']) $s += 0.5;
+    $s += min(1.8, 0.6 * count(array_intersect($a['words'], $b['words'])));
+    return $s;
+}
+
+/** Up to three short reasons, written for $me about $other. */
+function whyMatched(array $me, array $other): array
+{
+    $a = personFacts($me); $b = personFacts($other);
+    $first = explode(' ', trim($other['name']))[0] ?: 'They';
+    // Lower-case the first letter only, so "AI & tools" stays as it is.
+    $lc = fn($t) => preg_match('/^\p{Lu}\p{Ll}/u', $t) ? mb_strtolower(mb_substr($t, 0, 1)) . mb_substr($t, 1) : $t;
+    $why = [];
+    foreach (array_intersect($a['talk'], $b['help']) as $t) $why[] = "$first can help with " . $lc($t);
+    foreach (array_intersect($b['talk'], $a['help']) as $t) $why[] = "You can help $first with " . $lc($t);
+    foreach (array_intersect($a['talk'], $b['talk']) as $t) $why[] = 'You both want to talk about ' . $lc($t);
+    if ($a['space'] !== '' && $a['space'] !== 'Other' && $a['space'] === $b['space']) $why[] = 'You\'re both in ' . $lc($a['space']);
+    if ($a['stage'] !== false && $b['stage'] !== false) {
+        $d = $b['stage'] - $a['stage'];
+        if ($d === 0) $why[] = 'You\'re both at the ' . $lc(STAGES[$a['stage']]) . ' stage';
+        elseif ($d === 1) $why[] = "$first is a step ahead of you";
+        elseif ($d === -1) $why[] = "You're a step ahead of $first";
+    }
+    $shared = array_slice(array_values(array_intersect($a['words'], $b['words'])), 0, 2);
+    if ($shared) $why[] = 'You both mention “' . implode('” and “', $shared) . '”';
+    if (!$why) $why[] = 'Someone outside your usual circle';
+    return array_slice($why, 0, 3);
+}
+
+/** One reason two people were paired, in the third person, for the host's screen. */
+function whyPair(array $x, array $y): string
+{
+    $a = personFacts($x); $b = personFacts($y);
+    $fa = explode(' ', trim($x['name']))[0] ?: '?'; $fb = explode(' ', trim($y['name']))[0] ?: '?';
+    $lc = fn($t) => preg_match('/^\p{Lu}\p{Ll}/u', $t) ? mb_strtolower(mb_substr($t, 0, 1)) . mb_substr($t, 1) : $t;
+    if ($t = array_values(array_intersect($a['talk'], $b['help']))) return "$fb can help $fa with " . $lc($t[0]);
+    if ($t = array_values(array_intersect($b['talk'], $a['help']))) return "$fa can help $fb with " . $lc($t[0]);
+    if ($t = array_values(array_intersect($a['talk'], $b['talk']))) return 'Both want to talk about ' . $lc($t[0]);
+    if ($a['space'] !== '' && $a['space'] !== 'Other' && $a['space'] === $b['space']) return 'Both in ' . $lc($a['space']);
+    if ($a['stage'] !== false && $b['stage'] !== false && abs($a['stage'] - $b['stage']) <= 1) {
+        return $a['stage'] === $b['stage'] ? 'Both at the ' . $lc(STAGES[$a['stage']]) . ' stage' : ($a['stage'] > $b['stage'] ? $fa : $fb) . ' is a step ahead';
+    }
+    if ($w = array_values(array_intersect($a['words'], $b['words']))) return 'Both mention “' . $w[0] . '”';
+    return 'New faces';
+}
+
+/** The best way found to split $ids into pairs (one three if odd), avoiding $avoid pairs. */
+function bestGroups(array $ids, array $score, array $avoid = []): array
+{
+    $n = count($ids);
+    if ($n < 2) return $n ? [[$ids[0]]] : [];
+    $sc = function (int $x, int $y) use ($score, $avoid): float {
+        if ($x === 0 || $y === 0) return 0.0; // 0 is the empty seat when numbers are odd
+        $k = $x < $y ? "$x-$y" : "$y-$x";
+        return $score[$k] - (isset($avoid[$k]) ? 50.0 : 0.0);
+    };
+    $pool = $n % 2 ? [...$ids, 0] : $ids;
+    $best = null; $bestTotal = -INF;
+    for ($restart = 0; $restart < 12; $restart++) {
+        $p = shuffled($pool);
+        $pairs = [];
+        for ($i = 0; $i < count($p); $i += 2) $pairs[] = [$p[$i], $p[$i + 1]];
+        // Swap partners between two pairs whenever that raises the total. Stops when no swap helps.
+        $m = count($pairs);
+        for ($pass = 0, $improved = true; $improved && $pass < 50; $pass++) {
+            $improved = false;
+            for ($i = 0; $i < $m; $i++) for ($j = $i + 1; $j < $m; $j++) {
+                [$a, $b] = $pairs[$i]; [$c, $d] = $pairs[$j];
+                $now = $sc($a, $b) + $sc($c, $d);
+                $alt1 = $sc($a, $c) + $sc($b, $d);
+                $alt2 = $sc($a, $d) + $sc($b, $c);
+                if ($alt1 > $now + 1e-9 && $alt1 >= $alt2) { $pairs[$i] = [$a, $c]; $pairs[$j] = [$b, $d]; $improved = true; }
+                elseif ($alt2 > $now + 1e-9) { $pairs[$i] = [$a, $d]; $pairs[$j] = [$b, $c]; $improved = true; }
+            }
+        }
+        $total = 0.0;
+        foreach ($pairs as [$a, $b]) $total += $sc($a, $b);
+        if ($total > $bestTotal) [$best, $bestTotal] = [$pairs, $total];
+    }
+    // Whoever drew the empty seat joins the pair they fit best, as a three.
+    $groups = []; $lone = null;
+    foreach ($best as [$a, $b]) {
+        if ($a === 0 || $b === 0) $lone = $a ?: $b;
+        else $groups[] = [$a, $b];
+    }
+    if ($lone !== null) {
+        if (!$groups) return [[$lone]];
+        $gi = 0; $top = -INF;
+        foreach ($groups as $i => $g) {
+            $s = $sc($lone, $g[0]) + $sc($lone, $g[1]);
+            if ($s > $top) [$gi, $top] = [$i, $s];
+        }
+        $groups[$gi][] = $lone;
+    }
+    return $groups;
+}
+
+/** Score every pair once, with a little randomness so a reshuffle gives new matches. */
+function scoreAll(array $ids, array $byId): array
+{
+    $facts = [];
+    foreach ($ids as $id) $facts[$id] = personFacts($byId[$id] ?? []);
+    $score = [];
+    foreach ($ids as $x) foreach ($ids as $y) {
+        if ($x < $y) $score["$x-$y"] = pairScore($facts[$x], $facts[$y]) + random_int(0, 1200) / 1000;
+    }
+    return $score;
+}
+
+/** Round 1, then (with 4+ people) a round 2 with new people where possible. */
+function makeRounds(array $ids, array $byId): array
 {
     $n = count($ids);
     if ($n < 2) return [];
-    $r1 = groupUp(shuffled($ids));
+    $score = scoreAll($ids, $byId);
+    $r1 = bestGroups($ids, $score);
     if ($n < 4) return [$r1];
-    $seen = pairKeys($r1);
-    $best = null;
-    $bestOverlap = PHP_INT_MAX;
-    for ($t = 0; $t < 500 && $bestOverlap > 0; $t++) {
-        $g = groupUp(shuffled($ids));
-        $overlap = count(array_intersect_key(pairKeys($g), $seen));
-        if ($overlap < $bestOverlap) [$best, $bestOverlap] = [$g, $overlap];
-    }
-    return [$r1, $best];
+    return [$r1, bestGroups($ids, $score, pairKeys($r1))];
 }
 
 /** Someone joined after matching: pair them with an earlier latecomer, or make a three. */
 function assignLate(array &$walk, int $newId): void
 {
+    $byId = peopleById((int)$walk['id']);
+    $me = personFacts($byId[$newId] ?? []);
+    $fit = fn(int $id) => isset($byId[$id]) ? pairScore($me, personFacts($byId[$id])) + random_int(0, 500) / 1000 : 0.0;
     $met = [];
     foreach ($walk['rounds'] as $r => &$groups) {
         $placed = false;
         // Keep groups at 2-3: someone from a three splits off and pairs with the new person.
         // Earlier latecomers go first, so the original pairs stay together where possible.
+        // Of those who could split off, the one who fits the new person best.
         foreach ([true, false] as $latecomersOnly) {
+            $pick = null; $top = -INF;
             foreach ($groups as $gi => $g) {
                 if (count($g) < 3) continue;
                 foreach ($g as $lid) {
                     if ($latecomersOnly && !in_array($lid, $walk['late'], true)) continue;
                     if (in_array($lid, $met, true)) continue;
-                    $groups[$gi] = array_values(array_diff($g, [$lid]));
-                    $groups[] = [$lid, $newId];
-                    $met[] = $lid;
-                    $placed = true;
-                    break 3;
+                    $f = $fit($lid);
+                    if ($f > $top) [$pick, $top] = [[$gi, $lid], $f];
                 }
+            }
+            if ($pick) {
+                [$gi, $lid] = $pick;
+                $groups[$gi] = array_values(array_diff($groups[$gi], [$lid]));
+                $groups[] = [$lid, $newId];
+                $met[] = $lid;
+                $placed = true;
+                break;
             }
         }
         if (!$placed) {
@@ -334,7 +506,11 @@ function assignLate(array &$walk, int $newId): void
             if (!$options) foreach ($groups as $gi => $g) $options[$gi] = count($g);
             $min = min($options);
             $smallest = array_keys(array_filter($options, fn($c) => $c === $min));
-            $gi = $smallest[random_int(0, count($smallest) - 1)];
+            $gi = $smallest[0]; $top = -INF;
+            foreach ($smallest as $i) {
+                $f = array_sum(array_map($fit, $groups[$i]));
+                if ($f > $top) [$gi, $top] = [$i, $f];
+            }
             $met = array_merge($met, $groups[$gi]);
             $groups[$gi][] = $newId;
         }
@@ -541,15 +717,21 @@ try {
             $role = in_array(param('role'), ROLES, true) ? param('role') : '';
             $email = param('email') === '' ? '' : cleanEmail(param('email'));
             if (param('email') !== '' && $email === '') fail('That email doesn\'t look right. Check it, or leave it blank.');
-            $details = [$name, clean(param('business'), 60), clean(param('oneliner'), 90), $role, cleanLink(param('link')), empty(input()['listed']) ? 0 : 1];
+            $in = input();
+            $details = [$name, clean(param('business'), 60), clean(param('oneliner'), 90), $role, cleanLink(param('link')), empty($in['listed']) ? 0 : 1,
+                clean(param('headline'), 140),
+                in_array(param('space'), SPACES, true) ? param('space') : '',
+                in_array(param('stage'), STAGES, true) ? param('stage') : '',
+                json_encode(cleanPicks($in['talk'] ?? [], TOPICS)),
+                json_encode(cleanPicks($in['help'] ?? [], TOPICS))];
             // Signed up before on another phone or browser? Pick up that sign-up instead of making a second one.
             $existing = $email === '' ? null
                 : q('SELECT * FROM people WHERE walk_id = ? AND lower(email) = lower(?)', [$w['id'], $email])->fetch();
             if ($existing) {
-                q('UPDATE people SET name = ?, business = ?, oneliner = ?, role = ?, link = ?, listed = ? WHERE id = ?', [...$details, $existing['id']]);
+                q('UPDATE people SET name = ?, business = ?, oneliner = ?, role = ?, link = ?, listed = ?, headline = ?, space = ?, stage = ?, talk = ?, help = ? WHERE id = ?', [...$details, $existing['id']]);
                 $person = $existing;
             } else {
-                q('INSERT INTO people (walk_id, token, name, business, oneliner, role, link, listed, email, joined_at) VALUES (?,?,?,?,?,?,?,?,?,?)',
+                q('INSERT INTO people (walk_id, token, name, business, oneliner, role, link, listed, headline, space, stage, talk, help, email, joined_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
                     [$w['id'], bin2hex(random_bytes(16)), ...$details, $email, time()]);
                 $person = q('SELECT * FROM people WHERE id = ?', [db()->lastInsertId()])->fetch();
             }
@@ -656,7 +838,11 @@ try {
                     'checkedIn' => (bool)$p['checked_in_at'],
                 ];
             }
-            out(['ok' => true, 'walk' => walkInfo($w) + ['key' => $w['checkin_key']], 'people' => $people, 'groups' => $w['rounds']]);
+            // One short reason per group, for the host's list of matches.
+            $why = array_map(fn($groups) => array_map(
+                fn($g) => count($g) >= 2 && isset($byId[$g[0]], $byId[$g[1]]) ? whyPair($byId[$g[0]], $byId[$g[1]]) : '',
+                $groups), $w['rounds']);
+            out(['ok' => true, 'walk' => walkInfo($w) + ['key' => $w['checkin_key']], 'people' => $people, 'groups' => $w['rounds'], 'why' => $why]);
         }
 
         case 'host_checkin': {
@@ -677,7 +863,7 @@ try {
             if ($w['status'] === 'ended') fail('This walk has already ended.', 409);
             $ids = array_map('intval', q('SELECT id FROM people WHERE walk_id = ? AND checked_in_at IS NOT NULL ORDER BY id', [$w['id']])->fetchAll(PDO::FETCH_COLUMN));
             if (count($ids) < 2) fail('Matching needs at least 2 people checked in.');
-            $w['rounds'] = makeRounds($ids);
+            $w['rounds'] = makeRounds($ids, peopleById((int)$w['id']));
             $w['late'] = [];
             saveRounds($w);
             q('UPDATE walks SET status = \'matched\' WHERE id = ?', [$w['id']]);
@@ -737,7 +923,7 @@ try {
             header('Content-Type: text/csv; charset=utf-8');
             header('Content-Disposition: attachment; filename="founders-walk-' . $w['walk_date'] . '.csv"');
             $f = fopen('php://output', 'w');
-            fputcsv($f, ['Name', 'Role', 'Business', 'One line', 'LinkedIn', 'Email', 'Match 1', 'Match 1 status', 'Match 2', 'Match 2 status', 'Checked in', 'Done'], ',', '"', '');
+            fputcsv($f, ['Name', 'Role', 'Business', 'One line', 'Headline', 'Space', 'Stage', 'Wants to talk about', 'Can help with', 'LinkedIn', 'Email', 'Match 1', 'Match 1 status', 'Match 2', 'Match 2 status', 'Checked in', 'Done'], ',', '"', '');
             foreach ($byId as $id => $p) {
                 $progress = cleanProgress(json_decode($p['progress'], true));
                 $cols = [];
@@ -748,7 +934,7 @@ try {
                 }
                 // Neutralise spreadsheet formulas in user-entered cells.
                 $row = array_map(fn($v) => preg_match('/^[=+\-@]/', (string)$v) ? "'" . $v : $v,
-                    [$p['name'], $p['role'], $p['business'], $p['oneliner'], $p['link'], $p['email'], ...$cols, $p['checked_in_at'] ? 'yes' : 'no', $p['done_at'] ? 'yes' : 'no']);
+                    [$p['name'], $p['role'], $p['business'], $p['oneliner'], $p['headline'], $p['space'], $p['stage'], implode(', ', picks($p, 'talk')), implode(', ', picks($p, 'help')), $p['link'], $p['email'], ...$cols, $p['checked_in_at'] ? 'yes' : 'no', $p['done_at'] ? 'yes' : 'no']);
                 fputcsv($f, $row, ',', '"', '');
             }
             exit;

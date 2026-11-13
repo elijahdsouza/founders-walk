@@ -6,40 +6,48 @@
 <title>Founders Walk</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="Get matched with two founders you haven't met yet on Uncommon Collective's Founders Walk.">
-<meta name="theme-color" content="#0e0d0b">
+<meta name="theme-color" content="#1a1a1a">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%2216%22 fill=%22%233443cc%22/%3E%3Ctext x=%2216%22 y=%2222%22 font-family=%22Arial%22 font-weight=%22800%22 font-size=%2216%22 text-anchor=%22middle%22 fill=%22%23e6c20a%22%3EW%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Poppins:wght@300;400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Playfair+Display:ital@1&family=Plus+Jakarta+Sans:wght@600;700;800&family=Poppins:wght@300;400;500;600&display=swap">
 <style>
 /* Layout: one phone-width column (wider for the host), header + progress on top,
    one card-led step in the middle, a sticky action bar at the bottom. UC Pro Group tokens. */
 :root {
-  /* One dark look, matching the UC landing page: charcoal, white and cream text,
-     UC blue for actions, yellow for accents. */
-  --bg: #0e0d0b;          /* the dark background from before */
-  --surface: #1c1b18;     /* card */
-  --fg: #ffffff;          /* white */
-  --fg2: #e9e2d6;         /* cream, for secondary text */
-  --fg3: #a8a39a;
-  --rule: #2e2a23;
+  /* Matches the Founders Walk membership site: charcoal background, near-white text,
+     Plus Jakarta Sans headings, Poppins body, an italic serif accent line,
+     mono eyebrows with a dash, and UC blue pill buttons with a soft glow. */
+  --bg: #1a1a1a;          /* charcoal */
+  --surface: #242424;     /* dark card */
+  --fg: #f5f7fb;          /* near-white */
+  --fg2: #cfd1d6;         /* body copy */
+  --fg3: #8f9097;         /* muted */
+  --rule: #ffffff1f;
   --accent: #e6c20a;      /* UC yellow */
   --accent-ink: #e6c20a;
+  --gold: #bbab69;        /* logo gold */
   --blue: #3443cc;        /* UC blue */
   --blue-lt: #96a5f2;     /* periwinkle */
   --cream: #fdf6ec;
   --deep: #3443cc;
   --deep-fg: #ffffff;
   --deep-fg2: #dfe3ff;
+  --paper: #ffffff;       /* light cards, like the site's white cards */
+  --paper-fg: #1a1a1a;
+  --paper-fg2: #57534a;
+  --paper-rule: #e6e6e4;
   --danger: #ff8a80;
   --c-ice-bg: #e6c20a; --c-ice-fg: #1a1a1a;
   --c-journey-bg: #fdf6ec; --c-journey-fg: #1a1a1a;
   --c-net-bg: #96a5f2; --c-net-fg: #1a1a1a;
-  --display: "Poppins", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --display: "Plus Jakarta Sans", "Poppins", -apple-system, "Segoe UI", sans-serif;
   --text: "Poppins", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --serif: "Playfair Display", Georgia, serif;
   --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --glow: 0 10px 28px -8px color-mix(in srgb, var(--blue) 75%, transparent);
   --gutter: 16px;
-  --radius: 16px;
+  --radius: 18px;
   color-scheme: dark;
 }
 
@@ -47,7 +55,7 @@
 html, body { height: 100%; }
 body {
   margin: 0; background: var(--bg); color: var(--fg);
-  font: 400 15px/1.5 var(--text);
+  font: 400 15px/1.55 var(--text);
   -webkit-font-smoothing: antialiased;
 }
 button, input { font: inherit; color: inherit; }
@@ -63,15 +71,23 @@ a { color: inherit; }
 .app.wide { max-width: 1040px; }
 
 /* ----- header ----- */
-.top { padding-block: 14px 4px; display: grid; gap: 2px; }
-.brand { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.top { padding-block: 16px 4px; display: grid; gap: 4px; }
+.brand { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+.logo { display: inline-flex; align-items: center; gap: 8px; color: var(--fg); text-decoration: none; }
+.logo svg { width: 32px; height: 32px; flex: none; }
+.logo span { font: 500 11.5px/1.15 var(--text); letter-spacing: .04em; text-transform: uppercase; }
 .eyebrow {
-  font: 500 11px/1.4 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--fg3);
+  font: 500 11px/1.5 var(--mono); letter-spacing: .2em; text-transform: uppercase; color: var(--fg3);
 }
+.dash { display: inline-flex; align-items: center; gap: 10px; color: var(--fg); }
+.dash::before { content: ""; width: 22px; height: 1.5px; background: currentColor; flex: none; }
+.tagline { margin: 6px 0 0; font: italic 400 19px/1.3 var(--serif); color: var(--fg); }
 .top h1 {
-  margin: 0; font: 800 clamp(28px, 7.5vw, 34px)/1.05 var(--display); letter-spacing: -.03em;
+  margin: 2px 0 0; font: 800 clamp(30px, 8vw, 38px)/1.04 var(--display); letter-spacing: -.035em; color: #fff;
 }
-.top h1 em { font-style: normal; color: var(--accent); }
+.top h1 em { font-style: normal; }
+/* The site's highlighted words: a white box behind dark text. */
+.hl { background: #fff; color: #1a1a1a; border-radius: 6px; padding: 0 .16em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 .demo-note {
   margin: 10px 0 0; padding: 8px 12px; border-radius: 10px; border: 1px dashed var(--accent);
   font-size: 12.5px; color: var(--fg2);
@@ -95,9 +111,9 @@ a { color: inherit; }
 
 /* ----- main ----- */
 main { flex: 1; display: grid; align-content: start; gap: 14px; padding-block: 18px 14px; }
-.lead h2 { margin: 4px 0 6px; font: 700 25px/1.18 var(--display); text-wrap: balance; letter-spacing: -.025em; }
+.lead h2 { margin: 6px 0 8px; font: 800 26px/1.15 var(--display); text-wrap: balance; letter-spacing: -.03em; color: #fff; }
 .lead p { color: var(--fg2); }
-.lead p { margin: 0; color: var(--fg2); max-width: 36ch; }
+.lead p { margin: 0; color: var(--fg2); max-width: 38ch; font-weight: 300; }
 
 /* ----- form ----- */
 form { display: grid; gap: 14px; }
@@ -105,10 +121,10 @@ form { display: grid; gap: 14px; }
 .field label, .legend { font-size: 13px; font-weight: 500; }
 .field .hint { font-weight: 400; color: var(--fg3); }
 .input {
-  width: 100%; min-height: 48px; padding: 12px 14px; border-radius: 12px;
+  width: 100%; min-height: 50px; padding: 12px 16px; border-radius: 14px;
   border: 1px solid var(--rule); background: var(--surface); outline: none;
 }
-.input:focus { border-color: var(--fg); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); }
+.input:focus { border-color: var(--blue-lt); box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 45%, transparent); }
 .input::placeholder { color: var(--fg3); }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip-toggle input { position: absolute; opacity: 0; pointer-events: none; }
@@ -129,6 +145,23 @@ form { display: grid; gap: 14px; }
 .consent { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; font-size: 13.5px; color: var(--fg2); }
 .consent input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--fg); }
 .error { color: var(--danger); font-size: 13.5px; margin: 0; }
+/* "Help us match you": tap-to-pick chips. Picked = the site's white highlight. */
+.matchbox { display: grid; gap: 16px; padding: 18px 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--rule); }
+.matchbox .boxhead { display: grid; gap: 4px; }
+.matchbox h3 { margin: 0; font: 800 19px/1.2 var(--display); letter-spacing: -.02em; color: #fff; }
+.matchbox .small { color: var(--fg2); }
+.pick input { position: absolute; opacity: 0; pointer-events: none; }
+.pick > span {
+  display: inline-flex; align-items: center; min-height: 36px; padding: 6px 13px; border-radius: 99px;
+  border: 1px solid var(--rule); background: transparent; cursor: pointer; font-size: 13.5px; color: var(--fg);
+  transition: background-color .15s ease, color .15s ease;
+}
+.pick input:checked + span { background: #fff; color: #1a1a1a; border-color: #fff; font-weight: 500; }
+.pick input:checked + span::before { content: "✓"; margin-right: 6px; font-size: 12px; }
+.pick input:disabled + span { opacity: .4; cursor: not-allowed; }
+.pick input:focus-visible + span { outline: 2px solid var(--blue-lt); outline-offset: 2px; }
+.count-hint { font-weight: 400; color: var(--fg3); font-size: 12.5px; }
+.pick input:checked + span .count-hint { color: var(--paper-fg2); }
 
 /* ----- buttons ----- */
 .btn {
@@ -138,9 +171,10 @@ form { display: grid; gap: 14px; }
 }
 .btn:active { transform: scale(.98); }
 .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.btn-primary { background: var(--blue); color: #fff; font-weight: 600; }
+.btn-primary { background: var(--blue); color: #fff; font-weight: 600; box-shadow: var(--glow); }
 .btn-primary:hover { background: #2a38b8; }
-.btn-ghost { background: transparent; color: var(--fg); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--cream) 55%, transparent); }
+.btn-ghost { background: transparent; color: var(--fg); box-shadow: inset 0 0 0 1px #ffffff40; }
+.btn-ghost:hover { box-shadow: inset 0 0 0 1px #ffffff80; }
 .btn-quiet { background: transparent; color: var(--fg2); min-height: 40px; padding: 8px 12px; }
 .btn-sm { min-height: 40px; padding: 8px 16px; font-size: 14px; }
 .btn-danger { background: var(--danger); color: #fff; }
@@ -160,7 +194,8 @@ form { display: grid; gap: 14px; }
   display: grid; justify-items: start; gap: 2px; padding: 22px; border-radius: var(--radius);
   background: var(--deep); color: var(--deep-fg);
 }
-.count .num { font: 700 64px/1 var(--display); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.count { box-shadow: var(--glow); }
+.count .num { font: 800 64px/1 var(--display); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
 .count .cap { color: var(--deep-fg2); }
 .pulse { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--fg2); }
 .pulse::before {
@@ -180,22 +215,28 @@ form { display: grid; gap: 14px; }
 @media (prefers-reduced-motion: reduce) { .lchip { animation: none; } }
 
 /* ----- people ----- */
-.match { display: grid; gap: 8px; padding: 14px 16px; border-radius: var(--radius); background: var(--deep); color: var(--deep-fg); }
-.person { display: grid; grid-template-columns: 40px 1fr auto; gap: 12px; align-items: center; }
-.person + .person { padding-top: 8px; border-top: 1px solid color-mix(in srgb, var(--deep-fg) 14%, transparent); }
+/* Your match: a white card, like the site's light cards, with a dark avatar and gold initials. */
+.match { display: grid; gap: 12px; padding: 16px; border-radius: var(--radius); background: var(--paper); color: var(--paper-fg); }
+.person { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: center; }
+.match .person + .person { padding-top: 12px; border-top: 1px solid var(--paper-rule); }
 .avatar {
-  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
-  background: var(--accent); color: #16140f; font: 600 16px/1 var(--display);
+  width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+  background: #1a1a1a; color: var(--accent); font: 700 16px/1 var(--display);
 }
-.person .name { font: 700 18px/1.2 var(--display); letter-spacing: -.01em; }
-.person .meta { font-size: 13px; line-height: 1.4; color: var(--deep-fg2); min-width: 0; overflow-wrap: anywhere; }
+.person .name { font: 800 18px/1.2 var(--display); letter-spacing: -.02em; }
+.person .meta { font-size: 13px; line-height: 1.45; color: var(--paper-fg2); min-width: 0; overflow-wrap: anywhere; }
 .person .link {
-  align-self: start; margin-top: 2px; font-size: 12.5px; color: var(--deep-fg); white-space: nowrap;
-  text-decoration: none; padding: 5px 10px; border-radius: 99px; box-shadow: inset 0 0 0 1px var(--accent);
+  align-self: start; margin-top: 2px; font-size: 12.5px; font-weight: 500; color: #fff; background: var(--blue); white-space: nowrap;
+  text-decoration: none; padding: 6px 11px; border-radius: 99px;
 }
-.person .link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.person.self { background: var(--surface); color: var(--fg); border: 1px solid var(--rule); border-radius: var(--radius); padding: 14px; grid-template-columns: 40px 1fr; }
+.person .link:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.why { grid-column: 1 / -1; display: grid; gap: 6px; margin: 2px 0 0; padding: 0; list-style: none; }
+.why li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; font-size: 13.5px; line-height: 1.4; color: var(--paper-fg); }
+.why li::before { content: "✦"; width: 22px; height: 22px; border-radius: 50%; background: #1a1a1a; color: var(--accent); display: grid; place-items: center; font-size: 10px; }
+.why-label { grid-column: 1 / -1; font: 500 10.5px/1.4 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--paper-fg2); margin-top: 4px; }
+.person.self { background: var(--surface); color: var(--fg); border: 1px solid var(--rule); border-radius: var(--radius); padding: 14px; grid-template-columns: 44px 1fr; }
 .person.self .meta { color: var(--fg2); }
+.person.self .avatar { background: var(--accent); color: #1a1a1a; }
 
 /* ----- question cards ----- */
 .qhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
@@ -219,7 +260,7 @@ form { display: grid; gap: 14px; }
 .cat-ice { background: var(--c-ice-bg); color: var(--c-ice-fg); }
 .cat-journey { background: var(--c-journey-bg); color: var(--c-journey-fg); }
 .cat-net { background: var(--c-net-bg); color: var(--c-net-fg); }
-.qtext { margin: 0; font: 600 18px/1.35 var(--display); letter-spacing: -.01em; text-wrap: pretty; transition: opacity .18s ease; }
+.qtext { margin: 0; font: 700 18px/1.35 var(--display); letter-spacing: -.01em; text-wrap: pretty; transition: opacity .18s ease; }
 .qtext.swap { opacity: 0; }
 .qfoot { display: flex; justify-content: space-between; align-items: center; color: var(--fg3); font: 500 11px/1 var(--mono); letter-spacing: .1em; }
 .shuffle {
@@ -236,7 +277,7 @@ form { display: grid; gap: 14px; }
 .summary { display: grid; gap: 10px; }
 .srow { display: grid; gap: 4px; padding: 14px 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--rule); }
 .srow .top-line { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
-.srow .who { font: 700 17px/1.25 var(--display); letter-spacing: -.01em; }
+.srow .who { font: 800 17px/1.25 var(--display); letter-spacing: -.01em; }
 .state { font: 500 10.5px/1.5 var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
 .state-met { background: var(--accent); color: #16140f; }
 .state-skipped { box-shadow: inset 0 0 0 1.5px var(--accent); color: var(--accent-ink); }
@@ -250,7 +291,7 @@ form { display: grid; gap: 14px; }
 .arow { display: grid; gap: 2px; }
 .arow .meta { font-size: 14px; color: var(--fg); overflow-wrap: anywhere; }
 .arow a { font-size: 13.5px; color: var(--fg2); }
-.thanks { margin: 6px 0 0; text-align: center; font: 700 19px/1.3 var(--display); letter-spacing: -.02em; color: var(--accent); }
+.thanks { margin: 6px 0 0; text-align: center; font: italic 400 21px/1.3 var(--serif); color: #fff; }
 .row { display: flex; gap: 8px; }
 .row .input { flex: 1; min-width: 0; }
 
@@ -258,7 +299,7 @@ form { display: grid; gap: 14px; }
 .host-grid { display: grid; gap: 16px; }
 @media (min-width: 820px) { .host-grid { grid-template-columns: 340px 1fr; align-items: start; } }
 .panel { display: grid; gap: 14px; padding: 18px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--rule); min-width: 0; }
-.panel h3 { margin: 0; font: 700 20px/1.2 var(--display); letter-spacing: -.02em; }
+.panel h3 { margin: 0; font: 800 21px/1.2 var(--display); letter-spacing: -.025em; color: #fff; }
 .qr { justify-self: center; padding: 12px; background: #fff; border-radius: 12px; line-height: 0; }
 .qr img, .qr canvas { width: 220px; height: 220px; }
 .code { text-align: center; font: 500 40px/1 var(--mono); letter-spacing: .2em; }
@@ -279,7 +320,8 @@ form { display: grid; gap: 14px; }
 .x { appearance: none; border: 0; background: none; color: var(--fg3); cursor: pointer; padding: 6px; border-radius: 8px; font-size: 13px; }
 .x:hover, .x:focus-visible { color: var(--danger); }
 .groups { display: grid; gap: 10px; }
-.groups ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 14px; }
+.groups ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 14px; }
+.groups .gwhy { display: block; font-size: 12.5px; color: var(--fg3); }
 .btnrow { display: flex; flex-wrap: wrap; gap: 8px; }
 .wlist { display: grid; gap: 8px; }
 .witem { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--rule); background: var(--surface); text-decoration: none; }
@@ -300,10 +342,15 @@ form { display: grid; gap: 14px; }
 <div class="app" id="app">
   <header class="top">
     <div class="brand">
-      <span class="eyebrow">Uncommon Collective</span>
+      <span class="logo" aria-label="Uncommon Collective">
+        <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M17.04,6.76A3.9,3.9 0 0 1 22.38,12.44L15.74,18.69A3.94,3.94 0 0 0 21.15,24.43L27.79,18.19A3.9,3.9 0 0 1 33.13,23.86L25.42,31.11A11.74,11.74 0 0 1 9.34,14.01L17.04,6.76ZM10.48,12.94A3.9,3.9 0 0 1 15.82,18.61M21.22,24.36A3.9,3.9 0 0 1 26.56,30.03" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Uncommon<br>Collective</span>
+      </span>
       <span class="eyebrow" id="where"></span>
     </div>
-    <h1>Founders <em>Walk</em></h1>
+    <span class="eyebrow dash" id="kicker">Meet driven builders in Melbourne</span>
+    <p class="tagline" id="tagline">Outgrowing your circle on the way up.</p>
+    <h1>Founders Walk</h1>
     <p class="demo-note" id="demoNote" hidden>Preview with example people. Nothing here is saved or emailed.</p>
     <nav class="steps" id="steps" aria-label="Your progress"></nav>
   </header>
@@ -389,6 +436,12 @@ function defaultCards(code, round) {
   return picks;
 }
 function cardData(c) { return { cat: c.cat, i: c.i, label: CATS[c.cat], text: Q[c.cat][c.i] }; }
+
+// ================= matching inputs =================
+// Same lists as api.php. People tap these when they join; matching pairs people who'll click.
+const SPACES = ['Tech & software', 'Impact & social enterprise', 'Food & hospitality', 'Retail & consumer', 'Health & wellbeing', 'Creative & media', 'Services & consulting', 'Property & trades', 'Finance & investing', 'Education', 'Other'];
+const STAGES = [['Idea', 'just starting'], ['Early', 'first customers'], ['Growing', 'finding scale'], ['Established', 'running well']];
+const TOPICS = ['Getting customers', 'Marketing & brand', 'Fundraising', 'Hiring & team', 'Product', 'AI & tools', 'Partnerships', 'Money & pricing', 'Systems & ops', 'Wellbeing & balance'];
 
 // ================= plumbing =================
 const params = new URLSearchParams(location.search);
@@ -498,30 +551,88 @@ const Demo = (() => {
   const today = new Date(); const ymd = today.toISOString().slice(0, 10);
   const walk = { code: 'DEMO', title: 'Founders Walk', place: 'Carlton', date: ymd, status: 'open', rounds: [], nextWalkUrl: 'https://luma.com/uncommoncollective' };
   const people = [
-    { name: 'Maya (example)', role: 'Founder', oneliner: 'Building a booking app for physio clinics', link: 'https://www.linkedin.com/in/example' },
-    { name: 'Tom (example)', role: 'Operator', oneliner: 'Runs ops at a coffee subscription startup', link: '' },
-    { name: 'Priya (example)', role: 'Founder', oneliner: 'Turning café food waste into fertiliser', link: 'https://example.com' },
-    { name: 'Lachlan (example)', role: 'Investor', oneliner: 'Angel in climate and health', link: 'https://www.linkedin.com/in/example' },
-    { name: 'Sofia (example)', role: 'Creator', oneliner: 'Short videos about small-business money', link: '' },
-    { name: 'Ben (example)', role: 'Founder', oneliner: 'Quoting software for tradies', link: 'https://www.linkedin.com/in/example' },
+    { name: 'Maya (example)', role: 'Founder', business: 'Physio Booker', oneliner: 'Building a booking app for physio clinics', link: 'https://www.linkedin.com/in/example', space: 'Health & wellbeing', stage: 'Early', talk: ['Fundraising', 'Getting customers'], help: ['Product'], headline: 'Founder, Physio Booker | Helping clinics fill their books' },
+    { name: 'Tom (example)', role: 'Operator', business: 'Bean Box', oneliner: 'Runs ops at a coffee subscription startup', link: '', space: 'Food & hospitality', stage: 'Growing', talk: ['Hiring & team'], help: ['Systems & ops', 'Getting customers'], headline: '' },
+    { name: 'Priya (example)', role: 'Founder', business: 'Scrap Soil', oneliner: 'Turning café food waste into fertiliser', link: 'https://example.com', space: 'Impact & social enterprise', stage: 'Early', talk: ['Partnerships', 'Systems & ops'], help: ['Marketing & brand'], headline: 'Circular economy founder' },
+    { name: 'Lachlan (example)', role: 'Investor', business: '', oneliner: 'Angel in climate and health', link: 'https://www.linkedin.com/in/example', space: 'Finance & investing', stage: 'Established', talk: ['Partnerships'], help: ['Fundraising', 'Money & pricing'], headline: 'Angel investor | Climate and health' },
+    { name: 'Sofia (example)', role: 'Creator', business: '', oneliner: 'Short videos about small-business money', link: '', space: 'Creative & media', stage: 'Growing', talk: ['Marketing & brand'], help: ['Money & pricing'], headline: '' },
+    { name: 'Ben (example)', role: 'Founder', business: 'QuoteMate', oneliner: 'Quoting software for tradies', link: 'https://www.linkedin.com/in/example', space: 'Tech & software', stage: 'Early', talk: ['AI & tools', 'Getting customers'], help: ['AI & tools'], headline: '' },
   ].map((p, i) => ({ ...p, id: i + 1, token: 'ex' + (i + 1), email: '', progress: { rounds: {}, done: false }, emailed: false, done: false, checkedIn: i < 4 }));
   let nextId = 50, autoStart = null;
-  const pub = p => ({ id: p.id, name: p.name, role: p.role, business: p.business || '', oneliner: p.oneliner, link: p.link });
+  const pub = p => ({ id: p.id, name: p.name, role: p.role, business: p.business || '', oneliner: p.oneliner, link: p.link, headline: p.headline || '', space: p.space || '', stage: p.stage || '', talk: p.talk || [], help: p.help || [] });
   const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
-  const groupUp = ids => { const g = []; for (let i = 0; i + 1 < ids.length; i += 2) g.push([ids[i], ids[i + 1]]); if (ids.length % 2) { g.length ? g[g.length - 1].push(ids[ids.length - 1]) : g.push([ids[ids.length - 1]]); } return g; };
   const keys = gs => { const s = new Set(); gs.forEach(g => g.forEach(a => g.forEach(b => { if (a < b) s.add(a + '-' + b); }))); return s; };
+  // A small copy of api.php's matcher, so the preview pairs people the same way.
+  const byId = id => people.find(p => p.id === id) || {};
+  const STAGE_N = STAGES.map(s => s[0]);
+  const inter = (a, b) => (a || []).filter(x => (b || []).includes(x));
+  const wordsOf = p => [...new Set(((p.headline || '') + ' ' + (p.oneliner || '') + ' ' + (p.business || '')).toLowerCase().match(/[\p{L}\p{N}][\p{L}\p{N}&+-]{2,}/gu) || [])]
+    .filter(w => !['and', 'the', 'for', 'with', 'founder', 'business', 'helping', 'building', 'about', 'from', 'that', 'your'].includes(w));
+  function score(a, b) {
+    if (a.business && a.business.toLowerCase() === (b.business || '').toLowerCase()) return -20;
+    let s = 3 * (inter(a.talk, b.help).length + inter(b.talk, a.help).length) + 1.5 * inter(a.talk, b.talk).length;
+    if (a.space && a.space !== 'Other' && a.space === b.space) s += 1.5;
+    const sa = STAGE_N.indexOf(a.stage), sb = STAGE_N.indexOf(b.stage);
+    if (sa >= 0 && sb >= 0) { const d = Math.abs(sa - sb); s += d === 0 ? 1 : d === 1 ? 1.5 : 0; }
+    if (a.role && b.role && a.role !== b.role) s += 0.5;
+    return s + Math.min(1.8, 0.6 * inter(wordsOf(a), wordsOf(b)).length);
+  }
+  const lc = t => /^\p{Lu}\p{Ll}/u.test(t) ? t[0].toLowerCase() + t.slice(1) : t;
+  function why(me, o) {
+    const first = o.name.split(' ')[0], out = [];
+    inter(me.talk, o.help).forEach(t => out.push(first + ' can help with ' + lc(t)));
+    inter(o.talk, me.help).forEach(t => out.push('You can help ' + first + ' with ' + lc(t)));
+    inter(me.talk, o.talk).forEach(t => out.push('You both want to talk about ' + lc(t)));
+    if (me.space && me.space !== 'Other' && me.space === o.space) out.push('You\'re both in ' + lc(me.space));
+    const sa = STAGE_N.indexOf(me.stage), sb = STAGE_N.indexOf(o.stage);
+    if (sa >= 0 && sb >= 0) { if (sb === sa) out.push('You\'re both at the ' + lc(me.stage) + ' stage'); else if (sb - sa === 1) out.push(first + ' is a step ahead of you'); else if (sa - sb === 1) out.push('You\'re a step ahead of ' + first); }
+    const shared = inter(wordsOf(me), wordsOf(o)).slice(0, 2);
+    if (shared.length) out.push('You both mention “' + shared.join('” and “') + '”');
+    return (out.length ? out : ['Someone outside your usual circle']).slice(0, 3);
+  }
+  function bestGroups(ids, sc, avoid) {
+    if (ids.length < 2) return ids.length ? [[ids[0]]] : [];
+    const f = (x, y) => (x && y) ? sc[Math.min(x, y) + '-' + Math.max(x, y)] - (avoid && avoid.has(Math.min(x, y) + '-' + Math.max(x, y)) ? 50 : 0) : 0;
+    const pool = ids.length % 2 ? [...ids, 0] : ids;
+    let best = null, bestT = -Infinity;
+    for (let r = 0; r < 12; r++) {
+      const p = shuffle(pool), pairs = [];
+      for (let i = 0; i < p.length; i += 2) pairs.push([p[i], p[i + 1]]);
+      for (let pass = 0, imp = true; imp && pass < 50; pass++) {
+        imp = false;
+        for (let i = 0; i < pairs.length; i++) for (let j = i + 1; j < pairs.length; j++) {
+          const [a, b] = pairs[i], [c, d] = pairs[j], now = f(a, b) + f(c, d), x = f(a, c) + f(b, d), y = f(a, d) + f(b, c);
+          if (x > now + 1e-9 && x >= y) { pairs[i] = [a, c]; pairs[j] = [b, d]; imp = true; } else if (y > now + 1e-9) { pairs[i] = [a, d]; pairs[j] = [b, c]; imp = true; }
+        }
+      }
+      const t = pairs.reduce((s, [a, b]) => s + f(a, b), 0);
+      if (t > bestT) { best = pairs; bestT = t; }
+    }
+    const groups = best.filter(([a, b]) => a && b);
+    const lone = best.find(([a, b]) => !a || !b);
+    if (lone) { const x = lone[0] || lone[1]; if (!groups.length) return [[x]]; let gi = 0, top = -Infinity; groups.forEach((g, i) => { const v = f(x, g[0]) + f(x, g[1]); if (v > top) { top = v; gi = i; } }); groups[gi].push(x); }
+    return groups;
+  }
   function makeRounds(ids) {
     if (ids.length < 2) return [];
-    const r1 = groupUp(shuffle(ids)); if (ids.length < 4) return [r1];
-    const seen = keys(r1); let best = null, bo = Infinity;
-    for (let t = 0; t < 500 && bo > 0; t++) { const g = groupUp(shuffle(ids)); const o = [...keys(g)].filter(k => seen.has(k)).length; if (o < bo) { best = g; bo = o; } }
-    return [r1, best];
+    const sc = {}; ids.forEach(x => ids.forEach(y => { if (x < y) sc[x + '-' + y] = score(byId(x), byId(y)) + Math.random() * 1.2; }));
+    const r1 = bestGroups(ids, sc); if (ids.length < 4) return [r1];
+    return [r1, bestGroups(ids, sc, keys(r1))];
   }
   function matchesFor(id) {
     const out = [];
-    walk.rounds.forEach((gs, i) => gs.forEach(g => { if (g.includes(id)) out.push({ round: i + 1, people: g.filter(x => x !== id).map(x => pub(people.find(p => p.id === x))) }); }));
+    walk.rounds.forEach((gs, i) => gs.forEach(g => { if (g.includes(id)) out.push({ round: i + 1, people: g.filter(x => x !== id).map(x => ({ ...pub(byId(x)), why: why(byId(id), byId(x)) })) }); }));
     return out;
   }
+  // Third-person version of why() for the host, from the first person's side.
+  const groupWhy = () => walk.rounds.map(gs => gs.map(g => {
+    if (g.length < 2) return '';
+    const a = byId(g[0]), b = byId(g[1]), fa = a.name.split(' ')[0], fb = b.name.split(' ')[0];
+    const r = why(a, b)[0];
+    return r.replace(/^You both want/, 'Both want').replace(/^You're both/, 'Both').replace(/^You both/, 'Both').replace(/^You can help /, fa + ' can help ')
+      .replace(/^You're a step ahead of .*/, fa + ' is a step ahead').replace(new RegExp('^' + fb + ' is a step ahead of you'), fb + ' is a step ahead')
+      .replace(new RegExp('^' + fb + ' can help with '), fb + ' can help ' + fa + ' with ').replace('Someone outside your usual circle', 'New faces');
+  }));
   const here = () => people.filter(p => p.checkedIn);
   const counts = () => ({ count: here().length, signedUp: people.length });
   function start() { walk.rounds = makeRounds(here().map(p => p.id)); walk.status = 'matched'; }
@@ -540,7 +651,8 @@ const Demo = (() => {
         case 'join': {
           if (!String(b.name || '').trim()) throw new Error('Add your name so your match can find you.');
           if (!b.consent) throw new Error('Tick the box so we can share your details with your matches.');
-          const me = { id: nextId++, token: 'me' + nextId, listed: !!b.listed, name: b.name.trim().slice(0, 60), role: b.role || '', business: (b.business || '').slice(0, 60), oneliner: (b.oneliner || '').slice(0, 90), link: b.link ? (/^https?:/i.test(b.link) ? b.link : 'https://' + b.link) : '', email: b.email || '', progress: { rounds: {}, done: false }, emailed: false };
+          const me = { id: nextId++, token: 'me' + nextId, listed: !!b.listed, name: b.name.trim().slice(0, 60), role: b.role || '', business: (b.business || '').slice(0, 60), oneliner: (b.oneliner || '').slice(0, 90),
+            headline: (b.headline || '').slice(0, 140), space: b.space || '', stage: b.stage || '', talk: (b.talk || []).slice(0, 3), help: (b.help || []).slice(0, 3), link: b.link ? (/^https?:/i.test(b.link) ? b.link : 'https://' + b.link) : '', email: b.email || '', progress: { rounds: {}, done: false }, emailed: false };
           people.push(me);
           if (b.key) checkIn(me);
           if (walk.status === 'open' && me.checkedIn) { clearTimeout(autoStart); autoStart = setTimeout(start, 6000); }
@@ -567,7 +679,7 @@ const Demo = (() => {
         }
         case 'walks': return { ok: true, walks: [{ ...info(), count: people.length, here: here().length }] };
         case 'create': return { ok: true, code: 'DEMO' };
-        case 'host': return { ok: true, walk: { ...info(), key: 'demo' }, groups: walk.rounds, people: people.map(x => ({ ...pub(x), email: x.email, done: x.done, emailed: x.emailed, progress: x.progress, late: false, checkedIn: x.checkedIn })) };
+        case 'host': return { ok: true, walk: { ...info(), key: 'demo' }, groups: walk.rounds, why: groupWhy(), people: people.map(x => ({ ...pub(x), email: x.email, done: x.done, emailed: x.emailed, progress: x.progress, late: false, checkedIn: x.checkedIn })) };
         case 'host_checkin': { const x = people.find(x => x.id === Number(b.id)); if (x) checkIn(x); return { ok: true }; }
         case 'start': case 'reshuffle':
           if (here().length < 2) throw new Error('Matching needs at least 2 people checked in.');
@@ -694,12 +806,43 @@ function viewJoin(view) {
   const f = (id, label, attrs, hint) => h('div', { class: 'field' },
     h('label', { for: id }, label, hint ? h('span', { class: 'hint', text: ' ' + hint }) : null),
     h('input', { class: 'input', id, name: id, ...attrs }));
+  // Tap-to-pick chips. Single picks are radios; multi picks stop at three.
+  const pickGroup = (name, options, multi, labelId) => {
+    const wrap = h('div', { class: 'chips', role: multi ? 'group' : 'radiogroup', 'aria-labelledby': labelId });
+    options.forEach((o, i) => {
+      const [val, sub] = Array.isArray(o) ? o : [o, ''];
+      wrap.append(h('label', { class: 'pick' },
+        h('input', { type: multi ? 'checkbox' : 'radio', name, value: val, id: name + '-' + i }),
+        h('span', {}, val, sub ? h('span', { class: 'count-hint', style: 'margin-left:5px', text: sub }) : null)));
+    });
+    if (multi) wrap.addEventListener('change', () => {
+      const boxes = [...wrap.querySelectorAll('input')];
+      const full = boxes.filter(b => b.checked).length >= 3;
+      boxes.forEach(b => { if (!b.checked) b.disabled = full; });
+    });
+    return wrap;
+  };
+  const legend = (id, text, hint) => h('span', { class: 'legend', id }, text, hint ? h('span', { class: 'count-hint', text: ' ' + hint }) : null);
+  const matchBox = h('section', { class: 'matchbox', 'aria-labelledby': 'mbHead' },
+    h('div', { class: 'boxhead' },
+      h('span', { class: 'eyebrow dash', text: 'Help us match you' }),
+      h('h3', { id: 'mbHead' }, 'Meet the ', h('span', { class: 'hl', text: 'right' }), ' people.'),
+      h('p', { class: 'small', text: 'All optional. A few taps and we\'ll pair you with people you\'ll click with, and tell you why.' })),
+    h('div', { class: 'field' }, legend('spaceLbl', 'Your space'), pickGroup('space', SPACES, false, 'spaceLbl')),
+    h('div', { class: 'field' }, legend('stageLbl', 'Where your business is at'), pickGroup('stage', STAGES, false, 'stageLbl')),
+    h('div', { class: 'field' }, legend('talkLbl', 'I\'d like to talk about', '(up to 3)'), pickGroup('talk', TOPICS, true, 'talkLbl')),
+    h('div', { class: 'field' }, legend('helpLbl', 'I can help with', '(up to 3)'), pickGroup('help', TOPICS, true, 'helpLbl')),
+    h('div', { class: 'field' },
+      h('label', { for: 'headline' }, 'Your LinkedIn headline', h('span', { class: 'hint', text: ' (optional)' })),
+      h('input', { class: 'input', id: 'headline', name: 'headline', maxlength: '140', placeholder: 'e.g. Founder, Physio Booker | Helping clinics fill their books' }),
+      h('span', { class: 'small', text: 'Copy the line under your name on LinkedIn. We match on the words in it.' })));
   const submitLabel = S.key ? 'Check in' : 'Sign up';
   const submit = h('button', { class: 'btn btn-primary wide', type: 'submit', form: 'joinForm', text: submitLabel });
   const form = h('form', { id: 'joinForm', novalidate: true, onsubmit: async e => {
       e.preventDefault();
       const fd = new FormData(form);
       const body = Object.fromEntries(fd.entries());
+      body.talk = fd.getAll('talk'); body.help = fd.getAll('help');
       body.consent = fd.get('consent') === 'on';
       body.listed = fd.get('listed') === 'on';
       body.code = S.code;
@@ -721,15 +864,16 @@ function viewJoin(view) {
     f('oneliner', 'One line about what you do', { maxlength: '90', placeholder: 'e.g. a booking app for physio clinics' }),
     h('div', { class: 'field' }, h('span', { class: 'legend', id: 'roleLbl', text: 'You are mostly a' }), roleChips),
     f('link', 'LinkedIn or website', { type: 'url', inputmode: 'url', autocomplete: 'url', maxlength: '200', placeholder: 'linkedin.com/in/you' }, '(optional)'),
+    matchBox,
     f('email', 'Email for your summary', { type: 'email', inputmode: 'email', autocomplete: 'email', maxlength: '120', placeholder: 'you@company.com' }, S.key ? '(signed up already? use the same email and we\'ll find you)' : '(optional)'),
     h('label', { class: 'consent', for: 'consent' }, h('input', { type: 'checkbox', id: 'consent', name: 'consent' }),
-      h('span', { text: 'Share my name, business, role, one line and LinkedIn with the people I\'m matched with. Your email stays private. We delete walk details after 30 days.' })),
+      h('span', { text: 'Share my name, business, role, one line, LinkedIn and what I picked above with the people I\'m matched with. Your email stays private. We delete walk details after 30 days.' })),
     h('label', { class: 'consent', for: 'listed' }, h('input', { type: 'checkbox', id: 'listed', name: 'listed' }),
       h('span', { text: 'Also add me to this walk\'s attendee list, so everyone who came can find me on LinkedIn. (Optional)' })),
     err);
   view.append(
     h('div', { class: 'lead' },
-      h('h2', { text: 'Meet two founders you haven\'t met yet.' }),
+      h('h2', {}, 'Meet two founders you ', h('span', { class: 'hl', text: 'haven\'t met yet.' })),
       h('p', { text: S.key
         ? 'Add your name to check in. After the intro circle we\'ll pair you with someone new for the walk, then someone else for coffee.'
         : 'Sign up now so you\'re ready on the day. At the walk you\'ll scan a QR code to check in, then we\'ll pair you with someone new for the walk and someone else for coffee.' })),
@@ -800,12 +944,15 @@ function reshuffle(r, k) {
 }
 
 function personRow(p) {
+  const why = (p.why || []).filter(Boolean);
   return h('div', { class: 'person' },
     h('div', { class: 'avatar', 'aria-hidden': 'true', text: initials(p.name) }),
     h('div', { style: 'min-width:0' },
       h('div', { class: 'name', text: p.name }),
-      h('div', { class: 'meta', text: about(p) })),
-    p.link ? h('a', { class: 'link', href: p.link, target: '_blank', rel: 'noopener noreferrer', text: linkLabel(p.link) + ' ↗' }) : null);
+      h('div', { class: 'meta', text: [about(p), p.headline].filter(Boolean).join(' · ') })),
+    p.link ? h('a', { class: 'link', href: p.link, target: '_blank', rel: 'noopener noreferrer', text: linkLabel(p.link) + ' ↗' }) : null,
+    why.length ? h('span', { class: 'why-label', text: 'Why you two' }) : null,
+    why.length ? h('ul', { class: 'why' }, why.map(w => h('li', { text: w }))) : null);
 }
 
 function viewMatch(view, r) {
@@ -1063,6 +1210,7 @@ function hostShell() {
   $('app').classList.add('wide');
   $('steps').hidden = true;
   $('where').textContent = 'Host';
+  $('kicker').textContent = 'Host screen'; $('tagline').hidden = true;
   if (DEMO) $('demoNote').hidden = false;
   setBar();
 }
@@ -1207,13 +1355,14 @@ function renderHostWalk() {
           confirmButton(h('button', { class: 'x', type: 'button', 'aria-label': 'Remove ' + p.name, text: 'Remove' }), 'Sure?', async () => {
             try { await api('remove', { host: true, body: { code: walk.code, id: p.id } }); H.sig = ''; hostWalk(walk.code); } catch (ex) { toast(ex.message); }
           })),
-        h('span', { class: 'sub', text: [p.checkedIn ? 'Here' : 'Signed up, not here yet', about(p), p.email ? '✉ email' : 'no email'].filter(Boolean).join(' · ') }));
+        h('span', { class: 'sub', text: [p.checkedIn ? 'Here' : 'Signed up, not here yet', about(p), p.space, p.stage, (p.talk || []).length ? 'talk: ' + p.talk.join(', ') : '', (p.help || []).length ? 'helps: ' + p.help.join(', ') : '', p.email ? '✉ email' : 'no email'].filter(Boolean).join(' · ') }));
     }) : h('p', { class: 'small', text: 'Nobody yet. Share the sign-up link before the walk, or show the QR code on the day.' }));
 
   const groupsEl = walk.status === 'open' ? null : h('section', { class: 'panel' }, h('h3', { text: 'Matches' }),
     h('div', { class: 'groups' }, groups.map((gs, i) => h('div', {},
       h('span', { class: 'eyebrow', text: 'Match ' + (i + 1) }),
-      h('ol', {}, gs.map(g => h('li', { text: g.map(id => (byId[id] || {}).name || '?').join(' + ') })))))));
+      h('ol', {}, gs.map((g, gi) => h('li', {}, g.map(id => (byId[id] || {}).name || '?').join(' + '),
+        (H.data.why && H.data.why[i] && H.data.why[i][gi]) ? h('span', { class: 'gwhy', text: '✦ ' + H.data.why[i][gi] }) : null)))))));
 
   view.append(h('div', { class: 'host-grid' },
     h('section', { class: 'panel', style: 'justify-items:stretch' },
