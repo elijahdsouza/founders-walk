@@ -131,16 +131,48 @@ function cleanLink(string $s): string
     return filter_var($s, FILTER_VALIDATE_URL) ? $s : '';
 }
 
-/** Up to $max picks, each from the allowed list. Accepts an array or a comma-separated string. */
+/** A tapped option, or the person's own words. Typed text that matches a listed option, in any case, becomes that option. */
+function cleanChoice(string $v, array $allowed, int $max = 40): string
+{
+    $v = clean($v, $max);
+    if ($v === '') return '';
+    foreach ($allowed as $a) {
+        if (mb_strtolower($a) === mb_strtolower($v)) return $a;
+    }
+    return mb_strtoupper(mb_substr($v, 0, 1)) . mb_substr($v, 1);
+}
+
+/** Up to $max picks: listed options or the person's own words. Accepts an array or a comma-separated string. */
 function cleanPicks($v, array $allowed, int $max = 3): array
 {
     if (is_string($v)) $v = explode(',', $v);
     if (!is_array($v)) return [];
     $out = [];
     foreach ($v as $x) {
-        if (is_string($x) && in_array($x, $allowed, true) && !in_array($x, $out, true)) $out[] = $x;
+        if (!is_string($x)) continue;
+        $x = cleanChoice($x, $allowed);
+        if ($x !== '' && !in_array($x, $out, true)) $out[] = $x;
     }
     return array_slice($out, 0, $max);
+}
+
+/** Everything a person can fill in on the join form, cleaned. Used when joining and when editing. */
+function personDetails(): array
+{
+    $in = input();
+    return [
+        'name' => clean(param('name'), 60),
+        'business' => clean(param('business'), 60),
+        'oneliner' => clean(param('oneliner'), 90),
+        'role' => cleanChoice(param('role'), ROLES, 30),
+        'link' => cleanLink(param('link')),
+        'listed' => empty($in['listed']) ? 0 : 1,
+        'headline' => clean(param('headline'), 140),
+        'space' => cleanChoice(param('space'), SPACES),
+        'stage' => cleanChoice(param('stage'), STAGES),
+        'talk' => json_encode(cleanPicks($in['talk'] ?? [], TOPICS)),
+        'help' => json_encode(cleanPicks($in['help'] ?? [], TOPICS)),
+    ];
 }
 
 function picks(array $p, string $col): array
@@ -317,7 +349,14 @@ const STOPWORDS = ['and', 'the', 'for', 'with', 'from', 'that', 'this', 'your', 
 /** Meaningful words from someone's headline, one-liner and business name. */
 function words(array $p): array
 {
-    $text = mb_strtolower(implode(' ', [$p['headline'] ?? '', $p['oneliner'] ?? '', $p['business'] ?? '']));
+    // Answers people typed themselves (not picked from the lists) count as words too,
+    // so "climate tech" and "climate" still find each other.
+    $own = [];
+    if (($p['space'] ?? '') !== '' && !in_array($p['space'], SPACES, true)) $own[] = $p['space'];
+    foreach (['talk', 'help'] as $c) {
+        foreach (picks($p, $c) as $t) if (!in_array($t, TOPICS, true)) $own[] = $t;
+    }
+    $text = mb_strtolower(implode(' ', [$p['headline'] ?? '', $p['oneliner'] ?? '', $p['business'] ?? '', ...$own]));
     preg_match_all('/[\p{L}\p{N}][\p{L}\p{N}&+-]{2,}/u', $text, $m);
     $out = [];
     foreach ($m[0] as $w) {
@@ -717,19 +756,12 @@ try {
             if (!$isPost) fail('Use POST.', 405);
             $w = walkByCode(param('code'));
             if ($w['status'] === 'ended') fail('This walk has finished. See you at the next one.', 409);
-            $name = clean(param('name'), 60);
-            if ($name === '') fail('Add your name so your match can find you.');
+            $d = personDetails();
+            if ($d['name'] === '') fail('Add your name so your match can find you.');
             if (empty(input()['consent'])) fail('Tick the box so we can share your details with your matches.');
-            $role = in_array(param('role'), ROLES, true) ? param('role') : '';
             $email = param('email') === '' ? '' : cleanEmail(param('email'));
             if (param('email') !== '' && $email === '') fail('That email doesn\'t look right. Check it, or leave it blank.');
-            $in = input();
-            $details = [$name, clean(param('business'), 60), clean(param('oneliner'), 90), $role, cleanLink(param('link')), empty($in['listed']) ? 0 : 1,
-                clean(param('headline'), 140),
-                in_array(param('space'), SPACES, true) ? param('space') : '',
-                in_array(param('stage'), STAGES, true) ? param('stage') : '',
-                json_encode(cleanPicks($in['talk'] ?? [], TOPICS)),
-                json_encode(cleanPicks($in['help'] ?? [], TOPICS))];
+            $details = array_values($d);
             // Signed up before on another phone or browser? Pick up that sign-up instead of making a second one.
             $existing = $email === '' ? null
                 : q('SELECT * FROM people WHERE walk_id = ? AND lower(email) = lower(?)', [$w['id'], $email])->fetch();
@@ -743,6 +775,22 @@ try {
             }
             if (keyMatches($w, param('key'))) checkIn($w, $person);
             out(['ok' => true, 'token' => $person['token'], 'returning' => (bool)$existing]);
+        }
+
+        // Change your answers any time: before the walk, in the lobby, or after matching.
+        // Matches already made stay; what your matches see (and why) updates straight away.
+        case 'edit': {
+            if (!$isPost) fail('Use POST.', 405);
+            $w = walkByCode(param('code'));
+            if ($w['status'] === 'ended') fail('This walk has finished, so details can\'t be changed now.', 409);
+            $p = personByToken($w, param('token'));
+            $d = personDetails();
+            if ($d['name'] === '') fail('Add your name so your match can find you.');
+            $email = param('email') === '' ? '' : cleanEmail(param('email'));
+            if (param('email') !== '' && $email === '') fail('That email doesn\'t look right. Check it, or leave it blank.');
+            q('UPDATE people SET name = ?, business = ?, oneliner = ?, role = ?, link = ?, listed = ?, headline = ?, space = ?, stage = ?, talk = ?, help = ?, email = ? WHERE id = ?',
+                [...array_values($d), $email, $p['id']]);
+            out(['ok' => true]);
         }
 
         case 'checkin': {

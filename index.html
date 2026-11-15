@@ -161,6 +161,7 @@ form { display: grid; gap: 14px; }
 .pick input:disabled + span { opacity: .4; cursor: not-allowed; }
 .pick input:focus-visible + span { outline: 2px solid var(--blue-lt); outline-offset: 2px; }
 .count-hint { font-weight: 400; color: var(--fg3); font-size: 12.5px; }
+.choice { display: grid; gap: 10px; }
 .pick input:checked + span .count-hint { color: var(--paper-fg2); }
 
 /* ----- buttons ----- */
@@ -441,6 +442,9 @@ function cardData(c) { return { cat: c.cat, i: c.i, label: CATS[c.cat], text: Q[
 // Same lists as api.php. People tap these when they join; matching pairs people who'll click.
 const SPACES = ['Tech & software', 'Impact & social enterprise', 'Food & hospitality', 'Retail & consumer', 'Health & wellbeing', 'Creative & media', 'Services & consulting', 'Property & trades', 'Finance & investing', 'Education', 'Other'];
 const STAGES = [['Idea', 'just starting'], ['Early', 'first customers'], ['Growing', 'finding scale'], ['Established', 'running well']];
+const ROLES = ['Founder', 'Operator', 'Investor', 'Creator', 'Other'];
+// Typed-in roles use the "Other" colour.
+function roleClass(r) { return 'role-' + (ROLES.includes(r) ? r.toLowerCase() : 'other'); }
 const TOPICS = ['Getting customers', 'Marketing & brand', 'Fundraising', 'Hiring & team', 'Product', 'AI & tools', 'Partnerships', 'Money & pricing', 'Systems & ops', 'Wellbeing & balance'];
 
 // ================= plumbing =================
@@ -671,6 +675,14 @@ const Demo = (() => {
             lobby: walk.status !== 'open' || !me.checkedIn ? [] : here().map(x => ({ id: x.id, name: x.name, role: x.role })),
             attendees: walk.status === 'open' || !me.checkedIn ? [] : here().filter(x => x.listed !== false && x.id !== me.id).map(pub) };
         }
+        case 'edit': {
+          const me = find(b.token);
+          if (!String(b.name || '').trim()) throw new Error('Add your name so your match can find you.');
+          Object.assign(me, { name: b.name.trim().slice(0, 60), role: b.role || '', business: (b.business || '').slice(0, 60), oneliner: (b.oneliner || '').slice(0, 90),
+            link: b.link ? (/^https?:/i.test(b.link) ? b.link : 'https://' + b.link) : '', email: b.email || '', listed: !!b.listed,
+            headline: (b.headline || '').slice(0, 140), space: b.space || '', stage: b.stage || '', talk: (b.talk || []).slice(0, 3), help: (b.help || []).slice(0, 3) });
+          return { ok: true };
+        }
         case 'listme': { find(b.token).listed = !!b.listed; return { ok: true };
         }
         case 'progress': {
@@ -729,16 +741,19 @@ function renderSteps() {
     if (s.round) { const st = roundState(s.round); if (st === 'met') cls += ' done'; if (st === 'skipped') cls += ' skipped'; }
     if (s.key === 'done' && S.progress.done) cls += ' done';
     if (s.key === cur) cls += ' current';
-    const can = S.token && here() && matched() && s.key !== 'join';
+    // Join opens your answers for editing; the rest jump between matches.
+    const ended = S.walk && S.walk.status === 'ended';
+    const can = S.token && S.me && (s.key === 'join' ? !ended : here() && matched());
     const b = h('button', { class: cls, type: 'button', disabled: !can, 'aria-current': s.key === cur ? 'step' : null,
-      onclick: () => { S.step = s.key; render(); window.scrollTo({ top: 0 }); } },
+      'aria-label': s.key === 'join' && can ? 'Edit my details' : null,
+      onclick: () => { if (s.key === 'join') S.editing = true; else { S.editing = false; S.step = s.key; } render(); window.scrollTo({ top: 0 }); } },
       h('span', { class: 'bar' }), h('span', { class: 'lbl', text: s.label }));
     nav.append(b);
   });
 }
 
 function currentKey() {
-  if (!S.token || !here()) return 'join';
+  if (S.editing || !S.token || !here()) return 'join';
   if (!matched()) return 'join';
   if (S.walk.status === 'ended' && !S.step) return 'done';
   if (S.step) return S.step;
@@ -761,6 +776,7 @@ function render() {
   if (!S.walk) return viewLoading(view);
   if (!S.token) return S.walk.status === 'ended' ? viewEnded(view) : viewJoin(view);
   if (!S.me) return viewLoading(view);
+  if (S.editing && S.walk.status !== 'ended') return viewJoin(view);
   if (!here()) return S.walk.status === 'ended' ? viewEnded(view) : viewSignedUp(view);
   if (!matched()) return viewWaiting(view);
   const key = currentKey();
@@ -800,63 +816,113 @@ function viewEnded(view) {
   setBar();
 }
 
+// The join form doubles as the edit form: S.editing opens it filled in with your answers.
 function viewJoin(view) {
+  const editing = !!(S.editing && S.me);
+  const me = editing ? S.me : {};
   const err = h('p', { class: 'error', hidden: true });
-  const roleChips = h('div', { class: 'chips', role: 'radiogroup', 'aria-labelledby': 'roleLbl' },
-    ['Founder', 'Operator', 'Investor', 'Creator', 'Other'].map((r, i) =>
-      h('label', { class: 'chip-toggle role-' + r.toLowerCase() }, h('input', { type: 'radio', name: 'role', value: r, id: 'role-' + i, checked: i === 0 }), h('span', { text: r }))));
-  const f = (id, label, attrs, hint) => h('div', { class: 'field' },
-    h('label', { for: id }, label, hint ? h('span', { class: 'hint', text: ' ' + hint }) : null),
-    h('input', { class: 'input', id, name: id, ...attrs }));
-  // Tap-to-pick chips. Single picks are radios; multi picks stop at three.
-  const pickGroup = (name, options, multi, labelId) => {
-    const wrap = h('div', { class: 'chips', role: multi ? 'group' : 'radiogroup', 'aria-labelledby': labelId });
-    options.forEach((o, i) => {
+  const pending = []; // "add your own" boxes with text typed but not added yet
+
+  // One pick from a list, with "Other…" opening a box to type your own.
+  const choiceGroup = (name, options, labelId, current, placeholder, chipClass) => {
+    const vals = options.map(o => Array.isArray(o) ? o[0] : o);
+    const opts = vals.includes('Other') ? options : [...options, 'Other'];
+    const custom = current && !vals.includes(current) && current !== 'Other' ? current : '';
+    const other = h('input', { class: 'input', name: name + 'Other', maxlength: '40', placeholder, value: custom || null, hidden: !custom, 'aria-label': placeholder });
+    const wrap = h('div', { class: 'chips', role: 'radiogroup', 'aria-labelledby': labelId });
+    opts.forEach((o, i) => {
       const [val, sub] = Array.isArray(o) ? o : [o, ''];
-      wrap.append(h('label', { class: 'pick' },
-        h('input', { type: multi ? 'checkbox' : 'radio', name, value: val, id: name + '-' + i }),
-        h('span', {}, val, sub ? h('span', { class: 'count-hint', style: 'margin-left:5px', text: sub }) : null)));
+      const checked = custom ? val === 'Other' : current === val;
+      wrap.append(h('label', { class: chipClass ? chipClass(val) : 'pick' },
+        h('input', { type: 'radio', name, value: val, id: name + '-' + i, checked }),
+        h('span', {}, val === 'Other' ? 'Other…' : val, sub ? h('span', { class: 'count-hint', style: 'margin-left:5px', text: sub }) : null)));
     });
-    if (multi) wrap.addEventListener('change', () => {
+    wrap.addEventListener('change', () => {
+      const on = (wrap.querySelector('input:checked') || {}).value === 'Other';
+      other.hidden = !on; if (on) other.focus();
+    });
+    return h('div', { class: 'choice' }, wrap, other);
+  };
+  // Up to three picks, plus "+ Add" for your own words.
+  const multiGroup = (name, labelId, current) => {
+    const wrap = h('div', { class: 'chips', role: 'group', 'aria-labelledby': labelId });
+    const addChip = (val, checked) => wrap.append(h('label', { class: 'pick' }, h('input', { type: 'checkbox', name, value: val, checked }), h('span', { text: val })));
+    TOPICS.forEach(t => addChip(t, current.includes(t)));
+    current.filter(t => !TOPICS.includes(t)).forEach(t => addChip(t, true));
+    const input = h('input', { class: 'input', maxlength: '40', enterkeyhint: 'done', 'aria-label': 'Add your own' });
+    const btn = h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: '+ Add' });
+    const sync = () => {
       const boxes = [...wrap.querySelectorAll('input')];
-      const full = boxes.filter(b => b.checked).length >= 3;
-      boxes.forEach(b => { if (!b.checked) b.disabled = full; });
-    });
-    return wrap;
+      const full = boxes.filter(x => x.checked).length >= 3;
+      boxes.forEach(x => { if (!x.checked) x.disabled = full; });
+      input.disabled = btn.disabled = full;
+      input.placeholder = full ? 'Untick one to add another' : 'Or type your own';
+    };
+    const add = () => {
+      const v = input.value.trim(); if (!v || input.disabled) return;
+      const found = [...wrap.querySelectorAll('input')].find(x => x.value.toLowerCase() === v.toLowerCase());
+      if (found) { if (!found.disabled) found.checked = true; } else addChip(v.charAt(0).toUpperCase() + v.slice(1), true);
+      input.value = ''; sync();
+    };
+    btn.addEventListener('click', add);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); add(); } });
+    wrap.addEventListener('change', sync);
+    pending.push(add);
+    sync();
+    return h('div', { class: 'choice' }, wrap, h('div', { class: 'row' }, input, btn));
+  };
+  const pickOne = (fd, name) => {
+    const v = fd.get(name);
+    if (v === 'Other') return String(fd.get(name + 'Other') || '').trim() || 'Other';
+    return v || '';
   };
   const legend = (id, text, hint) => h('span', { class: 'legend', id }, text, hint ? h('span', { class: 'count-hint', text: ' ' + hint }) : null);
+
+  const f = (id, label, attrs, hint) => h('div', { class: 'field' },
+    h('label', { for: id }, label, hint ? h('span', { class: 'hint', text: ' ' + hint }) : null),
+    h('input', { class: 'input', id, name: id, value: me[id] || null, ...attrs }));
+
   const matchBox = h('section', { class: 'matchbox', 'aria-labelledby': 'mbHead' },
     h('div', { class: 'boxhead' },
       h('span', { class: 'eyebrow dash', text: 'Help us match you' }),
       h('h3', { id: 'mbHead' }, 'Meet the ', h('span', { class: 'hl', text: 'right' }), ' people.'),
-      h('p', { class: 'small', text: 'All optional. A few taps and we\'ll pair you with people you\'ll click with, and tell you why.' })),
-    h('div', { class: 'field' }, legend('spaceLbl', 'Your space'), pickGroup('space', SPACES, false, 'spaceLbl')),
-    h('div', { class: 'field' }, legend('stageLbl', 'Where your business is at'), pickGroup('stage', STAGES, false, 'stageLbl')),
-    h('div', { class: 'field' }, legend('talkLbl', 'I\'d like to talk about', '(up to 3)'), pickGroup('talk', TOPICS, true, 'talkLbl')),
-    h('div', { class: 'field' }, legend('helpLbl', 'I can help with', '(up to 3)'), pickGroup('help', TOPICS, true, 'helpLbl')),
-    h('div', { class: 'field' },
-      h('label', { for: 'headline' }, 'Your LinkedIn headline', h('span', { class: 'hint', text: ' (optional)' })),
-      h('input', { class: 'input', id: 'headline', name: 'headline', maxlength: '140', placeholder: 'e.g. Founder, Physio Booker | Helping clinics fill their books' }),
-      h('span', { class: 'small', text: 'Copy the line under your name on LinkedIn. We match on the words in it.' })));
-  const submitLabel = S.key ? 'Check in' : 'Sign up';
+      h('p', { class: 'small', text: 'All optional. Tap what fits, or type your own. We\'ll pair you with people you\'ll click with, and tell you why.' })),
+    h('div', { class: 'field' }, legend('spaceLbl', 'Your industry'), choiceGroup('space', SPACES, 'spaceLbl', me.space || '', 'Type your industry, e.g. Fashion')),
+    h('div', { class: 'field' }, legend('stageLbl', 'Where your business is at'), choiceGroup('stage', STAGES, 'stageLbl', me.stage || '', 'Type your stage, e.g. Side project')),
+    h('div', { class: 'field' }, legend('talkLbl', 'I\'d like to talk about', '(up to 3)'), multiGroup('talk', 'talkLbl', me.talk || [])),
+    h('div', { class: 'field' }, legend('helpLbl', 'I can help with', '(up to 3)'), multiGroup('help', 'helpLbl', me.help || [])),
+    f('headline', h('span', {}, 'Your LinkedIn headline', h('span', { class: 'hint', text: ' (optional)' })), { maxlength: '140', placeholder: 'e.g. Founder, Physio Booker | Helping clinics fill their books' }),
+    h('span', { class: 'small', style: 'margin-top:-10px', text: 'Copy the line under your name on LinkedIn. We match on the words in it.' }));
+
+  const submitLabel = editing ? 'Save changes' : S.key ? 'Check in' : 'Sign up';
   const submit = h('button', { class: 'btn btn-primary wide', type: 'submit', form: 'joinForm', text: submitLabel });
+  const cancel = editing ? h('button', { class: 'btn btn-ghost', type: 'button', text: 'Cancel', onclick: () => { S.editing = false; render(); window.scrollTo({ top: 0 }); } }) : null;
   const form = h('form', { id: 'joinForm', novalidate: true, onsubmit: async e => {
       e.preventDefault();
+      pending.forEach(add => add());
       const fd = new FormData(form);
-      const body = Object.fromEntries(fd.entries());
-      body.talk = fd.getAll('talk'); body.help = fd.getAll('help');
-      body.consent = fd.get('consent') === 'on';
-      body.listed = fd.get('listed') === 'on';
-      body.code = S.code;
+      const body = {
+        code: S.code, name: fd.get('name'), business: fd.get('business'), oneliner: fd.get('oneliner'), link: fd.get('link'),
+        email: fd.get('email'), headline: fd.get('headline'),
+        role: pickOne(fd, 'role'), space: pickOne(fd, 'space'), stage: pickOne(fd, 'stage'),
+        talk: fd.getAll('talk'), help: fd.getAll('help'),
+        listed: fd.get('listed') === 'on', consent: editing || fd.get('consent') === 'on',
+      };
       if (S.key) body.key = S.key;
       if (!String(body.name || '').trim()) { err.textContent = 'Add your name so your match can find you.'; err.hidden = false; return; }
       if (!body.consent) { err.textContent = 'Tick the box so we can share your details with your matches.'; err.hidden = false; return; }
       submit.disabled = true; submit.textContent = 'Saving';
       try {
-        const res = await api('join', { body });
-        S.token = res.token; store.set('fw:' + S.code, { token: res.token });
-        if (res.returning) toast('Welcome back. We found your sign-up.');
-        await refresh(true);
+        if (editing) {
+          await api('edit', { body: { ...body, token: S.token } });
+          S.editing = false; toast('Saved. Your matches see the new details.');
+          await refresh(true); window.scrollTo({ top: 0 });
+        } else {
+          const res = await api('join', { body });
+          S.token = res.token; store.set('fw:' + S.code, { token: res.token });
+          if (res.returning) toast('Welcome back. We found your sign-up.');
+          await refresh(true);
+        }
       } catch (ex) {
         err.textContent = ex.message; err.hidden = false; submit.disabled = false; submit.textContent = submitLabel;
       }
@@ -864,30 +930,44 @@ function viewJoin(view) {
     f('name', 'Full name', { autocomplete: 'name', maxlength: '60', required: true, placeholder: 'e.g. Alex Nguyen' }),
     f('business', 'Business name', { autocomplete: 'organization', maxlength: '60', placeholder: 'e.g. Physio Booker' }, '(optional)'),
     f('oneliner', 'One line about what you do', { maxlength: '90', placeholder: 'e.g. a booking app for physio clinics' }),
-    h('div', { class: 'field' }, h('span', { class: 'legend', id: 'roleLbl', text: 'You are mostly a' }), roleChips),
+    h('div', { class: 'field' }, h('span', { class: 'legend', id: 'roleLbl', text: 'You are mostly a' }),
+      choiceGroup('role', ROLES, 'roleLbl', editing ? (me.role || '') : 'Founder', 'Type your role, e.g. Coach', v => 'chip-toggle ' + roleClass(v))),
     f('link', 'LinkedIn or website', { type: 'url', inputmode: 'url', autocomplete: 'url', maxlength: '200', placeholder: 'linkedin.com/in/you' }, '(optional)'),
     matchBox,
-    f('email', 'Email for your summary', { type: 'email', inputmode: 'email', autocomplete: 'email', maxlength: '120', placeholder: 'you@company.com' }, S.key ? '(signed up already? use the same email and we\'ll find you)' : '(optional)'),
-    h('label', { class: 'consent', for: 'consent' }, h('input', { type: 'checkbox', id: 'consent', name: 'consent' }),
+    f('email', 'Email for your summary', { type: 'email', inputmode: 'email', autocomplete: 'email', maxlength: '120', placeholder: 'you@company.com' }, !editing && S.key ? '(signed up already? use the same email and we\'ll find you)' : '(optional)'),
+    editing ? null : h('label', { class: 'consent', for: 'consent' }, h('input', { type: 'checkbox', id: 'consent', name: 'consent' }),
       h('span', { text: 'Share my name, business, role, one line, LinkedIn and what I picked above with the people I\'m matched with. Your email stays private. We delete walk details after 30 days.' })),
-    h('label', { class: 'consent', for: 'listed' }, h('input', { type: 'checkbox', id: 'listed', name: 'listed' }),
+    h('label', { class: 'consent', for: 'listed' }, h('input', { type: 'checkbox', id: 'listed', name: 'listed', checked: !!me.listed }),
       h('span', { text: 'Also add me to this walk\'s attendee list, so everyone who came can find me on LinkedIn. (Optional)' })),
     err);
   view.append(
-    h('div', { class: 'lead' },
-      h('h2', {}, 'Meet two founders you ', h('span', { class: 'hl', text: 'haven\'t met yet.' })),
-      h('p', { text: S.key
-        ? 'Add your name to check in. After the intro circle we\'ll pair you with someone new for the walk, then someone else for coffee.'
-        : 'Sign up now so you\'re ready on the day. At the walk you\'ll scan a QR code to check in, then we\'ll pair you with someone new for the walk and someone else for coffee.' })),
+    editing
+      ? h('div', { class: 'lead' }, h('span', { class: 'eyebrow', text: 'Edit your details' }),
+          h('h2', {}, 'Change ', h('span', { class: 'hl', text: 'anything.' })),
+          h('p', { text: matched() ? 'Your matches see the new details straight away. Who you\'re matched with stays the same.' : 'Change any answer, then save. You can come back and edit again any time.' }))
+      : h('div', { class: 'lead' },
+          h('h2', {}, 'Meet two founders you ', h('span', { class: 'hl', text: 'haven\'t met yet.' })),
+          h('p', { text: S.key
+            ? 'Add your name to check in. After the intro circle we\'ll pair you with someone new for the walk, then someone else for coffee.'
+            : 'Sign up now so you\'re ready on the day. At the walk you\'ll scan a QR code to check in, then we\'ll pair you with someone new for the walk and someone else for coffee.' })),
     form);
-  setBar(submit);
+  setBar(cancel, submit);
+}
+
+// "Edit my details": on every screen after you've joined.
+function editButton() {
+  return h('button', { class: 'btn btn-quiet btn-sm', type: 'button', style: 'justify-self:start;padding-left:0',
+    onclick: () => { S.editing = true; render(); window.scrollTo({ top: 0 }); } }, '✎ Edit my details');
 }
 
 function selfCard() {
   const me = S.me || {};
+  const picks = [(me.talk || []).length ? 'Talk: ' + me.talk.join(', ') : '', (me.help || []).length ? 'Can help: ' + me.help.join(', ') : ''].filter(Boolean).join(' · ');
   return h('div', { class: 'person self' },
     h('div', { class: 'avatar', 'aria-hidden': 'true', text: initials(me.name || '') }),
-    h('div', {}, h('div', { class: 'name', text: me.name }), h('div', { class: 'meta', text: about(me) || 'Your match will see this.' })));
+    h('div', {}, h('div', { class: 'name', text: me.name }),
+      h('div', { class: 'meta', text: [about(me), me.space, me.stage].filter(Boolean).join(' · ') || 'Your match will see this.' }),
+      picks ? h('div', { class: 'meta', text: picks }) : null));
 }
 
 function viewSignedUp(view) {
@@ -898,7 +978,7 @@ function viewSignedUp(view) {
       h('p', { text: started
         ? 'Scan the QR code on the host\'s phone and we\'ll add you to a pair straight away.'
         : 'When you arrive, scan the QR code on the host\'s phone to check in. Only people who check in get matched, so nobody is paired with an empty spot.' })),
-    h('div', { class: 'field' }, h('span', { class: 'legend', text: 'What your matches will see' }), selfCard()),
+    h('div', { class: 'field' }, h('span', { class: 'legend', text: 'What your matches will see' }), selfCard(), editButton()),
     h('p', { class: 'small', text: 'Can\'t scan on the day? Ask the host to check you in.' }));
   setBar();
 }
@@ -911,7 +991,7 @@ function viewWaiting(view) {
     h('div', { class: 'count' }, h('span', { class: 'num', id: 'countNum', text: String(S.count) }), h('span', { class: 'cap', id: 'countCap', text: S.count === 1 ? 'person checked in so far' : 'people checked in so far' })),
     h('p', { class: 'pulse', text: DEMO ? 'In this preview, matching starts by itself in a few seconds' : 'Waiting for the host to start matching' }),
     h('div', { class: 'field' }, h('span', { class: 'legend', text: 'In the lobby' }), h('div', { class: 'lobby', id: 'lobby' })),
-    h('div', { class: 'field' }, h('span', { class: 'legend', text: 'What your matches will see' }), selfCard()));
+    h('div', { class: 'field' }, h('span', { class: 'legend', text: 'What your matches will see' }), selfCard(), editButton()));
   fillLobby();
   setBar();
 }
@@ -920,7 +1000,7 @@ function viewWaiting(view) {
 function fillLobby() {
   const el = $('lobby'); if (!el) return;
   const list = S.lobby || [];
-  el.replaceChildren(...(list.length ? list.map(p => h('span', { class: 'lchip' + (S.me && p.id === S.me.id ? ' me' : '') + (p.role ? ' role-' + p.role.toLowerCase() : '') },
+  el.replaceChildren(...(list.length ? list.map(p => h('span', { class: 'lchip' + (S.me && p.id === S.me.id ? ' me' : '') + (p.role ? ' ' + roleClass(p.role) : '') },
       h('span', { class: 'lav', 'aria-hidden': 'true', text: initials(p.name) }),
       h('span', { text: (S.me && p.id === S.me.id ? 'You' : p.name.split(' ')[0]) + (p.role ? ' · ' + p.role : '') })))
     : [h('p', { class: 'small', text: 'Just you so far.' })]));
@@ -1001,7 +1081,7 @@ function viewMatch(view, r) {
       three ? h('p', { text: 'Walk together, all three of you. Take turns answering each card so everyone gets a go.' }) : null),
     h('div', { class: 'match' }, m.people.map(personRow)),
     h('div', { class: 'qhead' }, h('span', { class: 'eyebrow', text: 'Talk about' }), shuffleAll),
-    track, dots);
+    track, dots, editButton());
 
   const idx = S.cardIdx[r] || 0;
   if (idx) requestAnimationFrame(() => { const c = track.children[idx]; if (c) track.scrollLeft = c.offsetLeft - track.offsetLeft - 16; });
@@ -1114,6 +1194,7 @@ function viewDone(view) {
     h('div', { class: 'summary' }, rows),
     attendees,
     mail,
+    ended ? null : editButton(),
     h('p', { class: 'thanks', text: 'Thanks for choosing Founders Walk.' }));
   setBar();
 }
@@ -1162,7 +1243,8 @@ async function refresh(force) {
     if (attSig !== S.attSig) { S.attSig = attSig; S.attendees = res.attendees || []; if (S.sig === sig && currentKey() === 'done') render(); }
     const lobbySig = JSON.stringify(res.lobby || []);
     if (lobbySig !== S.lobbySig) { S.lobbySig = lobbySig; S.lobby = res.lobby || []; fillLobby(); }
-    if (force || sig !== S.sig) { S.sig = sig; render(); }
+    // While someone is editing, don't redraw the page under their fingers; saving redraws it.
+    if (force || sig !== S.sig) { S.sig = sig; if (!S.editing || force) render(); }
   } catch (ex) {
     if (ex.status === 404 && S.token) {
       store.del('fw:' + S.code); S.token = null; S.me = null; S.sig = ''; return refresh(true);
